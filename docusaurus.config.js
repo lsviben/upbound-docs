@@ -73,18 +73,13 @@ const config = {
     ],
     plugins: [
         [
-            "docusaurus-pushfeedback",
-            {
-                project: "0p5hvygqxb",
-            },
-        ],
-        [
             "@docusaurus/plugin-content-docs",
             {
                 id: "docs",
                 path: "docs",
                 routeBasePath: "/",
                 sidebarPath: require.resolve("./src/sidebars/main.js"),
+                remarkPlugins: [require("./scripts/manifest-embed-plugin")],
             },
         ],
         [
@@ -184,7 +179,7 @@ const config = {
                     {
                         label: "Get Started",
                         position: "left",
-                        to: "/getstarted/",
+                        to: "/",
                     },
                     {
                         type: "dropdown",
@@ -225,12 +220,12 @@ const config = {
                                 to: "/self-hosted-spaces/overview/",
                             },
                             {
-                                label: "CLI",
-                                to: "/manuals/cli/overview/",
+                                label: "Platform",
+                                to: "/manuals/platform/overview/",
                             },
                             {
-                                label: "Console",
-                                to: "/manuals/console/upbound-console/",
+                                label: "CLI",
+                                to: "/manuals/cli/overview/",
                             },
                             {
                                 label: "Packages",
@@ -239,10 +234,6 @@ const config = {
                             {
                                 label: "Marketplace",
                                 to: "/manuals/marketplace/overview/",
-                            },
-                            {
-                                label: "Platform",
-                                to: "/manuals/platform/overview/",
                             },
                         ],
                     },
