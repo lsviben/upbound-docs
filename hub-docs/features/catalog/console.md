@@ -148,6 +148,5 @@ To add or manage connections, see [External registries](external-registry.md).
 - [Catalog overview](overview.md)
 - [Enable and configure Catalog](configuration.md)
 - [External registries](external-registry.md)
-- [Catalog API overview](reference.md)
 - [Feature flags](../../reference/feature-flags.md)
 - [Feature lifecycle](../../reference/feature-releases.md)

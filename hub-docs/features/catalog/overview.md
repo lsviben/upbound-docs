@@ -53,10 +53,11 @@ the correlated resources and control planes for realms where they have access.
 To start using Catalog, see:
 
 **How-to guides**
+
 - [Browsing the Catalog](console.md)
 - [Enable and configure Catalog](configuration.md)
 
 **Reference**
-- [Catalog API overview](reference.md)
+
 - [Feature flags](../../reference/feature-flags.md)
 - [Feature lifecycle](../../reference/feature-releases.md)

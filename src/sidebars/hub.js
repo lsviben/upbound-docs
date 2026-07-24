@@ -25,7 +25,6 @@ module.exports = {
             'features/catalog/configuration',
             'features/catalog/external-registry',
             'features/catalog/console',
-            'features/catalog/reference',
           ],
         },
       ],

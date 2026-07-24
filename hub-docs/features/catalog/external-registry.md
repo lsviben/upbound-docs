@@ -125,5 +125,4 @@ the upstream registry into the catalog, is planned.
 
 - [Catalog overview](overview.md)
 - [Enable and configure Catalog](configuration.md)
-- [Catalog API overview](reference.md)
 - [Feature flags](../../reference/feature-flags.md)

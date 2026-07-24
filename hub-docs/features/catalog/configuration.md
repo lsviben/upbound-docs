@@ -168,6 +168,5 @@ endpoint `/apis/catalog.hub.upbound.io/v1alpha1` should return the following:
 ## See also
 
 - [Catalog overview](overview.md)
-- [Catalog API overview](reference.md)
 - [External registries](external-registry.md)
 - [Feature flags](../../reference/feature-flags.md)
