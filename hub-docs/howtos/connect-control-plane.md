@@ -7,11 +7,8 @@ description: Connect a control plane to Upbound Platform to observe its resource
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## Overview
-
-This page walks you through connecting a Kubernetes cluster as a control plane
-to Upbound Platform. Connecting a control plane allows its resources to be
-observed in the Console or hub API.
+Connecting a Kubernetes cluster as a control plane to the Upbound platform
+allows you to observe its resources in the Console or hub API.
 
 :::note
 To connect control planes managed by Upbound Spaces, see [how to connect a
@@ -77,8 +74,9 @@ Capture the registration token from Step 1. Use it to deploy the
 connector in Step 3.
 
 :::warning
-The registration token is shown once. It's valid for 24 hours, can be used only
-once, and can't be retrieved after being created. You may reissue the token,
+The Console and kubectl return the registration token only once.
+This one-time-use token is valid for 24 hours and you can't retrieve it after
+creation. You may reissue the token,
 which invalidates the existing token.
 :::
 
@@ -156,8 +154,8 @@ Notes:
   `hub-connector-credentials`. Override it only if you named the secret
   differently.
 - `connector.sync.limitToClusterRoles` limits which resources the connector syncs
-  to those authorized by the listed ClusterRoles. It defaults to `crossplane-admin`,
-  so only Crossplane resources are synced. Set it to `[]` to sync all resources.
+  to those authorized by the listed ClusterRoles. It defaults to `crossplane-admin` 
+  which only syncs Crossplane resources. Set it to `[]` to sync all resources.
 
 ## Step 4: Verify the connector started
 

@@ -795,5 +795,5 @@ cleaner, more intuitive APIs.
 
 [xrd-scope]: https://docs.crossplane.io/latest/composition/composite-resource-definitions/#xrd-scope
 [connection-details]: https://docs.crossplane.io/latest/guides/connection-details-composition
-[upgrade-uxp]: /getstarted/upgrade-to-upbound/upgrade-to-uxp
+[upgrade-uxp]: /manuals/uxp/howtos/upgrade-to-uxp
 [provider-migration]: /manuals/packages/providers/migration

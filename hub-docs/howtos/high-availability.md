@@ -4,8 +4,8 @@ sidebar_position: 12
 description: Run Hub with redundancy across nodes and zones.
 ---
 
-This page walks you through running Hub with enough redundancy that a single
-Pod, node, or zone failure doesn't interrupt service.
+Hub survives the loss of a single Pod, node, or zone when you run `hub-core` and
+`hub-webui` with multiple replicas and spread them intentionally.
 
 ## Prerequisites
 <!-- vale write-good.Passive = NO -->
@@ -18,43 +18,43 @@ Pod, node, or zone failure doesn't interrupt service.
 - An externally managed PostgreSQL with its own HA story. Hub itself goes
   stateless across replicas, so cluster availability is bounded by the database
   tier. See [the database overview][overview].
-- Sized resource requests for `hub-api`. Pick a tier in [sizing][sizing]
+- Sized resource requests for `hub-core`. Pick a tier in [sizing][sizing]
   before scaling out. Replicas without requests don't pack onto separate
   nodes reliably.
 <!-- vale write-good.TooWordy  = YES -->
 <!-- vale write-good.Passive = YES -->
 
-HA applies to `hub-api` and `hub-webui`. The `hub-connector` runs as a singleton
+HA applies to `hub-core` and `hub-webui`. The `hub-connector` runs as a singleton
 in each observed control plane by design and isn't horizontally scaled.
 
 ## Configure replicas
 
-Set the replica count for `hub-api` (and, if you installed the UI, for
+Set the replica count for `hub-core` (and, if you installed the UI, for
 `hub-webui`):
 
 ```yaml
-hub-api:
+hub-core:
   api:
     replicaCount: 3
 
 hub-webui:
-  replicas: 2
+  replicaCount: 2
 ```
 
-Three `hub-api` replicas is the smallest count that survives a node drain while
-keeping a quorum of Ready Pods serving traffic. `hub-api` is stateless (every
+Three `hub-core` replicas is the smallest count that survives a node drain while
+keeping a quorum of Ready Pods serving traffic. `hub-core` is stateless (every
 replica reads and writes the same PostgreSQL backend), so you can scale up
 further without coordination. The UI is a static asset server. Two replicas are
 enough for redundancy.
 
 ## Configure pod disruption budgets
 
-The chart renders a PodDisruptionBudget for `hub-api`, but leaves it off by
+The chart renders a PodDisruptionBudget for `hub-core`, but leaves it off by
 default. Enable it once you run more than one replica so voluntary disruptions
 (node drains, cluster upgrades) can't evict every replica at once:
 
 ```yaml
-hub-api:
+hub-core:
   api:
     pdb:
       create: true
@@ -80,14 +80,14 @@ Spread replicas across nodes and zones so a single failure domain can't take
 down every Pod:
 
 ```yaml
-hub-api:
+hub-core:
   api:
     affinity:
       podAntiAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
           - labelSelector:
               matchLabels:
-                app.kubernetes.io/name: hub-api
+                app.kubernetes.io/name: hub-core
                 app.kubernetes.io/instance: hub
             topologyKey: kubernetes.io/hostname
         preferredDuringSchedulingIgnoredDuringExecution:
@@ -95,12 +95,12 @@ hub-api:
             podAffinityTerm:
               labelSelector:
                 matchLabels:
-                  app.kubernetes.io/name: hub-api
+                  app.kubernetes.io/name: hub-core
                   app.kubernetes.io/instance: hub
               topologyKey: topology.kubernetes.io/zone
 ```
 
-The required term keeps two `hub-api` Pods off the same node. The preferred term
+The required term keeps two `hub-core` Pods off the same node. The preferred term
 steers the scheduler toward different zones when capacity allows, without making
 the Pods unschedulable if a zone is full. If you operate in a single zone, drop
 the preferred term. See the [Kubernetes affinity and anti-affinity
@@ -109,7 +109,7 @@ for alternative topology keys.
 
 ## Next step
 
-- [Autoscaling][autoscaling]. Let `hub-api` grow and shrink with load instead
+- [Autoscaling][autoscaling]. Let `hub-core` grow and shrink with load instead
   of running a fixed replica count.
 
 [autoscaling]: /hub/howtos/autoscaling

@@ -1,26 +1,23 @@
 ---
 title: RBAC and OIDC group mapping
 sidebar_position: 14
-description: Bind OIDC groups to Hub roles across the organisation, realm, and control-plane tiers.
+description: Bind OIDC groups to Hub roles across the organization, realm, and control-plane tiers.
 ---
-
-This page explains Hub's three-tier authorization model and how to bind OIDC
-groups to Hub roles at each tier.
 
 ## Tenancy boundaries
 
-Hub authorises requests across three nested tiers. Each tier owns its own grant
+Hub authorizes requests across three nested tiers. Each tier owns its own grant
 mechanism, and grants don't cascade between tiers.
 
-**Organisation**. The Hub installation as a whole. Everything served from a
-single `hub-api` is one organisation. Organisation-scoped state includes the set
-of realms, the identity providers, and the organisation-level role bindings
+**Organization**. The Hub installation as a whole. Everything served from a
+single `hub-core` is one organization. Organization-scoped state includes the set
+of realms, the identity providers, and the organization-level role bindings
 themselves.
 
-**Realm**. A logical grouping of control planes inside an organisation. Most Hub
+**Realm**. A logical grouping of control planes inside an organization. Most Hub
 API resources are realm-scoped (control plane registrations, realm-level role
 bindings, and other per-tenant configuration all live in a realm). An
-organisation can contain many realms. A common pattern is one realm per team or
+organization can contain many realms. A common pattern is one realm per team or
 environment.
 
 <!-- vale write-good.Passive = NO -->
@@ -31,7 +28,7 @@ governed by that cluster's own Kubernetes RBAC. Hub doesn't own this tier.
 <!-- vale write-good.Passive = YES -->
 
 :::note
-Grants don't cascade between tiers. An organisation administrator has no
+Grants don't cascade between tiers. An organization administrator has no
 automatic access inside any realm, and a realm administrator has no automatic
 access inside any control plane. Bind users at every tier they need to operate
 in.
@@ -43,7 +40,7 @@ Hub provides one binding resource per tier it owns. Hub delegates the control-pl
 
 | Tier | Hub binding | Scope | Built-in roles |
 |------|-------------|-------|----------------|
-| Organisation | `OrganizationRoleBinding` (ORB) | Cluster-scoped (Hub-wide) | `org-admin` |
+| Organization | `OrganizationRoleBinding` (ORB) | Cluster-scoped (Hub-wide) | `org-admin` |
 | Realm | `RealmRoleBinding` (RRB) | Namespaced in the realm | `realm-admin`, `realm-editor`, `realm-viewer` |
 | Control plane | None | Defers to the control plane's own RBAC | None |
 
@@ -88,9 +85,9 @@ group-claim setup.
 
 ## Configure organization-level access
 
-Grant a group organisation-wide permissions by creating an
+Grant a group organization-wide permissions by creating an
 `OrganizationRoleBinding`. The resource is cluster-scoped, so it has no
-`namespace`. The built-in organisation role is `org-admin`.
+`namespace`. The built-in organization role is `org-admin`.
 
 Assuming `corp:` is the `userInfoPrefix` from your
 `IdentityProvider` and `platform-admins` is the group value your OIDC provider
@@ -130,7 +127,7 @@ default configuration this is the email claim), so `name:
 "corp:alice@example.com"`.
 
 :::note
-An `org-admin` ORB grants organisation-scoped capabilities only, such as
+An `org-admin` ORB grants organization-scoped capabilities only, such as
 managing realms, identity providers, and Hub-wide settings. It doesn't grant
 access to any realm's contents. You must grant the same subject a
 `RealmRoleBinding` in every realm they need to operate in.

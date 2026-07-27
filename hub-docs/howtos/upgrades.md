@@ -4,16 +4,15 @@ sidebar_position: 15
 description: Upgrade Hub and understand schema migrations and rollbacks.
 ---
 
-This page walks you through upgrading a running Hub installation to a newer
-chart version. It covers how the chart applies schema migrations and what to consider
-before rolling back.
+Upgrading a running Hub installation to a newer chart version applies schema
+migrations, which constrain how far you can roll back.
 
 ## How releases work
 
 <!-- vale Microsoft.Adverbs = NO -->
 <!-- vale write-good.Passive = NO -->
 Hub releases as a single train. The `hub` umbrella chart pins matching versions
-of all three binaries (`hub-api`, `hub-connector`, and `hub-webui`), and they
+of all three binaries (`hub-core`, `hub-connector`, and `hub-webui`), and they
 are released together at the same chart version. You can install and manage each subchart
 separately, see the feature compatibility document to understand
 compatibility guarantees between versions.
@@ -22,9 +21,9 @@ compatibility guarantees between versions.
 Schema migrations are applied automatically as part of every chart upgrade. The
 chart runs the embedded migration tool in a dedicated Job, registered as a Helm
 `pre-upgrade` hook. Helm blocks on that Job until it succeeds before rolling
-out any new `hub-api` Pods. A single Job applies the schema change once,
+out any new `hub-core` Pods. A single Job applies the schema change once,
 rather than every replica racing it during a rolling update. Only after the
-migration Job succeeds does Helm proceed to roll the new `hub-api` Pods.
+migration Job succeeds does Helm proceed to roll the new `hub-core` Pods.
 
 Migrations are **forward-only**. The migration tool has no down-migrations. Once
 a newer chart version has run its migrations against your database, the schema
@@ -56,10 +55,10 @@ Before running `helm upgrade`, work through the following:
    older chart, you may need the backup to restore the previous schema. Use your
    database provider's native snapshot facility, such as an RDS snapshot.
 6. **Plan the maintenance window.** `helm upgrade` blocks on the migration Job
-   before it rolls any new `hub-api` Pods. Your existing Pods keep serving while
+   before it rolls any new `hub-core` Pods. Your existing Pods keep serving while
    the migration runs. The window depends on the size of the migration; small
    upgrades typically take seconds, but a migration that rewrites a large table
-   can take longer. Notify any clients of `hub-api` of the expected window.
+   can take longer. Notify any clients of `hub-core` of the expected window.
 
 :::warning
 Database migrations can't be reversed automatically. Always take a backup of
@@ -92,7 +91,7 @@ The upgrade is a standard `helm upgrade` against the `hub` chart.
 3. Watch the rollout:
 
     ```bash
-    kubectl -n hub rollout status deployment/hub-api
+    kubectl -n hub rollout status deployment/hub-core
     kubectl -n hub rollout status deployment/hub-webui
     ```
 
@@ -111,7 +110,7 @@ The upgrade is a standard `helm upgrade` against the `hub` chart.
 
 5. Verify:
 
-    - The migration Job completed successfully and the `hub-api` Pods are
+    - The migration Job completed successfully and the `hub-core` Pods are
       `Ready`.
     - The Hub UI loads and you can authenticate.
     - Each `hub-connector` reconnects and continues reporting ControlPlane
@@ -157,7 +156,7 @@ is unsafe and contact support before proceeding.
 
 :::warning
 `helm rollback` doesn't reverse database migrations. Rolling the chart back
-without verifying schema compatibility can leave `hub-api` unable to start. It can
+without verifying schema compatibility can leave `hub-core` unable to start. It can
 also run with subtly inconsistent behavior against a schema it doesn't
 understand.
 :::

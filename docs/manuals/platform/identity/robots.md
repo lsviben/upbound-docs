@@ -42,6 +42,6 @@ You should use a robot token for your Upbound Marketplace CI to push new tags or
 </details>
 
 [up-cli]: /reference/cli-reference
-[personal-access-token]: /manuals/platform/insights/navigating/
+[personal-access-token]: /manuals/console/upbound-console/
 [team]: /manuals/platform/teams/#manage-repository-permissions
 [upbound-console]: https://console.upbound.io/

@@ -1,22 +1,19 @@
 ---
 title: Autoscaling
 sidebar_position: 13
-description: Scale hub-api with the Horizontal Pod Autoscaler.
+description: Scale hub-core with the Horizontal Pod Autoscaler.
 ---
-
-This page covers how to scale `hub-api` Pods horizontally with the Kubernetes
-Horizontal Pod Autoscaler.
 
 ## Horizontal pod autoscaler
 
-The chart includes an opt-in `HorizontalPodAutoscaler` for `hub-api`. When
-enabled, the HPA scales the `hub-api` Deployment based on observed CPU
+The chart includes an opt-in `HorizontalPodAutoscaler` for `hub-core`. When
+enabled, the HPA scales the `hub-core` Deployment based on observed CPU
 utilization against the Pod's CPU request.
 
 Enable it in your `values.yaml`:
 
 ```yaml
-hub-api:
+hub-core:
   api:
     resources:
       requests:
@@ -37,8 +34,8 @@ Without it, the HPA can't read CPU metrics and doesn't scale.
 
 <!-- vale write-good.Passive = NO -->
 :::note
-The HPA needs CPU `requests` set on the `hub-api` container to compute
-utilisation. The chart leaves `resources` empty by default. Set requests and
+The HPA needs CPU `requests` set on the `hub-core` container to compute
+utilization. The chart leaves `resources` empty by default. Set requests and
 limits explicitly before enabling the HPA, or scaling decisions are
 undefined.
 :::
@@ -47,7 +44,7 @@ undefined.
 ### Custom metrics
 
 CPU and memory are the only metrics the chart wires today. Hub-specific signals
-(hub-api query rate, hub-connector ingestion backlog, PostgreSQL connection
+(hub-core query rate, hub-connector ingestion backlog, PostgreSQL connection
 saturation) are available via Prometheus. These aren't yet integrated into
 the chart's HPA template. If you need to scale on those signals, install a
 custom metrics adapter such as the Prometheus Adapter. Then manage your own

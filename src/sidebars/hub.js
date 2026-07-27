@@ -55,6 +55,8 @@ module.exports = {
         'howtos/high-availability',
         'howtos/autoscaling',
         'howtos/rbac',
+        'howtos/connect-control-plane',
+        'howtos/connect-space',
         'howtos/upgrades',
       ],
     },

@@ -4,11 +4,10 @@ sidebar_position: 2
 description: Turn on the Catalog and Registry feature gates through Helm values.
 ---
 
-Catalog is controlled by a single feature gate. A related feature to
-configure image registry connections is enabled separately.
-
-Catalog is an alpha feature, so both gates are off until you opt in.
-For what Catalog does, see the [Catalog overview](overview.md).
+To use Catalog, you must enable its feature gate. To configure image registry
+connections, you must enable a separate, related feature gate. Both are alpha
+features and disabled by default until you opt in. See the Catalog overview
+for what Catalog does.
 
 For more information on configuring external registries,
 see [External registries.](external-registry.md)
@@ -21,15 +20,18 @@ see [External registries.](external-registry.md)
 ## Prerequisites
 
 Before you enable Catalog, ensure:
-
+<!-- vale write-good.Passive = NO -->
 - A running Hub installation. See [Install Hub](../../howtos/install.md).
 - Helm access to the Hub release, so you can run `helm upgrade`.
 - The feature flag server is enabled. It's on by default. See [Feature
   flags](../../reference/feature-flags.md).
 - Network egress from the `hub-core` namespace to the registries
   that host your package images.
+<!-- vale write-good.Passive = YES -->
 
+<!-- vale Google.Headings = NO -->
 ## Enable Catalog
+<!-- vale Google.Headings = YES -->
 
 1. Add the `Catalog` gate to your `values.yaml`.
 
@@ -51,7 +53,7 @@ Before you enable Catalog, ensure:
      --values values.yaml
    ```
 
-   Or flip the gate inline without a values file. Pass `--reuse-values` so the
+   You can also flip the gate inline without a values file. Pass `--reuse-values` so the
    upgrade keeps the rest of your release's configuration and changes only this
    gate:
 
@@ -65,9 +67,10 @@ Before you enable Catalog, ensure:
    `Ready`.
 
 3. Confirm `hub-core` picked up the gate.
-
+<!-- vale Upbound.Spelling = NO -->
    The `hub-core` startup logs enumerate every gate it evaluates. Check that
    `Catalog` reads `true`:
+<!-- vale Upbound.Spelling = YES -->
 
    ```shell
    kubectl logs -n hub deployment/hub-core | grep -i catalog

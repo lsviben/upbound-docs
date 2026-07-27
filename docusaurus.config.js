@@ -240,6 +240,10 @@ const config = {
                                 to: "/hub/",
                             },
                             {
+                                label: "Console",
+                                to: "/manuals/console/upbound-console/",
+                            },
+                            {
                                 label: "Platform",
                                 to: "/manuals/platform/overview/",
                             },

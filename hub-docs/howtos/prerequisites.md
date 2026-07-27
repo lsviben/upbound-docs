@@ -36,7 +36,7 @@ for ingress, TLS, or Postgres. The chart installs into a single Namespace.
 <!-- vale Microsoft.HeadingAcronyms = YES -->
 
 
-Hub serves the `hub-api` and `hub-webui` services over HTTPS on
+Hub serves the `hub-core` and `hub-webui` services over HTTPS on
 operator-provided hostnames. You can use any conformant controller for
 outside traffic to reach them.
 
@@ -83,7 +83,7 @@ subdomain prefixes are configurable.
 
 | Hostname (default) | Serves |
 |--------------------|--------|
-| `api.<your-domain>` | `hub-api` HTTP API, including the OIDC callback at `/oidc/callback`. |
+| `api.<your-domain>` | `hub-core` HTTP API, including the OIDC callback at `/oidc/callback`. |
 | `ui.<your-domain>` | `hub-webui` browser UI. |
 
 Substitute `<your-domain>` with the apex domain you control (such as
@@ -99,8 +99,8 @@ For each hostname you publish, you need:
   the simplest. Per-host certificates also work.
 
 <!-- vale write-good.Weasel = NO -->
-The hostname you choose for `hub-api` is the value you set as
-`hub-api.api.externalURL` at install time. `hub-api` uses it to construct the
+The hostname you choose for `hub-core` is the value you set as
+`hub-core.api.externalURL` at install time. `hub-core` uses it to construct the
 OIDC callback URI it registers with your provider. The value must be
 reachable from end-user browsers exactly as configured.
 <!-- vale write-good.Weasel = YES -->
@@ -126,7 +126,7 @@ Configure Hub against an OIDC-compliant provider you already operate or
 subscribe to.
 
 The provider needs OIDC discovery, plus `email` and group claims. It also has to
-accept a redirect URI Hub computes from your `hub-api` hostname. Common
+accept a redirect URI Hub computes from your `hub-core` hostname. Common
 providers (Amazon Cognito, Microsoft Entra ID, Google Workspace, Okta, Auth0,
 Keycloak) all qualify. The full contract, the staged setup order, and the
 per-provider walkthroughs are on [the OIDC overview][oidc-configuration]. That

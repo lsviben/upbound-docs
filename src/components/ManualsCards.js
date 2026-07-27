@@ -5,7 +5,7 @@ const sections = [
   {
     title: 'Upbound hub',
     description: 'Configure the central management layer for the Upbound platform.',
-    link: '/hub/overview/'
+    link: '/hub/'
   },
   {
     title: 'Upbound Crossplane (UXP)',
@@ -31,6 +31,11 @@ const sections = [
     title: 'CLI',
     description: 'Command-line tools for managing Upbound configurations, contexts, and project tooling.',
     link: '/manuals/cli/overview'
+  },
+  {
+    title: 'Console',
+    description: 'Operate your control planes from one place: usage and logs, the resource explorer, the Crossplane WebUI, and the Query API.',
+    link: '/manuals/console/upbound-console'
   },
   {
     title: 'Official Packages',

@@ -4,16 +4,13 @@ sidebar_position: 1
 description: How a self-hosted Hub installation fits together and what you provide.
 ---
 
-This page explains what a self-hosted Hub installation looks like, what you
-provide, and how to choose between the sub-guides.
-
 ## Architecture
 
 A self-hosted hub is a single cluster running the hub control plane components
 and one or more observed Kubernetes clusters running the `hub-connector`. The
-connector pushes the resource state of your clusters to the `hub-api`. You can
-configure ingress to allow users to access the `hub-api` or the `hub-webui`. CLI
-tools and the hub connector authenticate against the `hub-api` with an
+connector pushes the resource state of your clusters to the `hub-core`. You can
+configure ingress to allow users to access the `hub-core` or the `hub-webui`. CLI
+tools and the hub connector authenticate against the `hub-core` with an
 OIDC-style token exchange.
 
 
@@ -22,7 +19,7 @@ flowchart TB
   subgraph hub["Hub installation cluster"]
     ing["Ingress / Gateway API<br/>(your TLS cert)"]
     webui["hub-webui"]
-    api["hub-api<br/>:8080 API<br/>:8444 token exchange"]
+    api["hub-core<br/>:8080 API<br/>:8444 token exchange"]
     pg["PostgreSQL (external)"]
     ing --> webui
     webui <--> api
@@ -55,7 +52,7 @@ flowchart TB
 
 ## What you provide
 
-- **A PostgreSQL database.** `hub-api` requires its own database. A managed
+- **A PostgreSQL database.** `hub-core` requires its own database. A managed
   offering (RDS, Cloud SQL, Azure Database for PostgreSQL) or a self-managed
   instance both work. See [the databases overview][overview] for
   the version, extensions, and authentication modes Hub supports.
@@ -64,7 +61,7 @@ flowchart TB
   overview][oidc-configuration] for the contract and the per-provider guides.
 - **Ingress with a real TLS certificate.** Provide a Gateway API setup or an
   Ingress controller, plus a CA-signed certificate.
-- **DNS.** Pick the hostnames for `hub-api` and `hub-webui`
+- **DNS.** Pick the hostnames for `hub-core` and `hub-webui`
   (typically `api.<your-domain>` and `ui.<your-domain>`) and create the DNS
   records before install. Hub computes the OIDC redirect URI from them, and it must
   match what the provider has registered.
@@ -89,13 +86,13 @@ or issue resolution. Any such deployment is at your own risk.
 
 ## What the chart provides
 
-The `hub` umbrella chart at `<chart-ref>` installs three subcharts - `hub-api`,
-`hub-webui` and `hub-connector`. `hub-api` is the only chart that's required
+The `hub` umbrella chart at `<chart-ref>` installs three subcharts - `hub-core`,
+`hub-webui` and `hub-connector`. `hub-core` is the only chart that's required
 for an operational API that can accept resources and serve responses.
 `hub-webui` is optional (but recommended) to interact with the system without
 using the API directly.
 
-- **`hub-api` Deployment.** The API server, plus a Kubernetes Job that runs
+- **`hub-core` Deployment.** The API server, plus a Kubernetes Job that runs
   schema migrations on install and upgrade.
 - **`hub-webui` Deployment.** The browser UI. Optional, disable it if you only
   want the API.
@@ -104,7 +101,7 @@ using the API directly.
   architecture reference describes the
   connector's data and authentication flow
 - **Bootstrap configuration.** A Kubernetes Secret rendered from
-  `hub-api.bootstrap.files`. Use it to register your initial Hub objects at
+  `hub-core.bootstrap.files`. Use it to register your initial Hub objects at
   install time. That covers the first `IdentityProvider`, the first
   `ControlPlane`, plus an `OrganizationRoleBinding` linking your OIDC admin
   group to Hub's admin role. The first login then opens at a usable cluster.

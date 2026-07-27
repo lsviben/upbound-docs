@@ -19,34 +19,42 @@ API-compatibility expectations at each stage.
 
 ## How feature flags work
 
-`hub-api` embeds a flag server that speaks
-[OFREP][ofrep] and reads its flag
-definitions from a JSON file. The chart generates that file as a ConfigMap from
-the `hub-core.api.featureFlags.gates.*` values and mounts it into the `hub-api`
-Pod, so you toggle features through Helm values rather than editing flag
-definitions by hand. Each gate is named after the capability it controls, as a
-single PascalCase token such as `Catalog` or `Registry`.
+Each gate has a built-in default in `hub-core`'s application code, and the
+chart only passes your overrides. The values under
+`hub-core.api.featureFlags.gates.*` render to a sorted, comma-separated
+`FEATURE_GATES` environment variable on the `hub-core` Deployment, such as
+`Catalog=true,Registry=true`. When you override nothing, the chart omits the
+variable and the built-in defaults stand.
+
+`hub-core` builds its flag definition in memory from those gates and serves it
+over [OFREP][ofrep]. No ConfigMap holds the definition, so you toggle features
+through Helm values rather than editing flag definitions by hand. Each gate is
+named after the capability it controls, as a single PascalCase token such as
+`Catalog` or `Registry`.
+
+An unrecognized gate name fails `hub-core` startup rather than being ignored.
 
 `hub-core.api.featureFlags.enabled` controls the flag server itself,
-which defaults to `true`. Leave it on. When it's `false`, `hub-api` starts with
+which defaults to `true`. Leave it on. When it's `false`, `hub-core` starts with
 no flag client and every gated feature is forced off regardless of the
 `gates.*` values.
 
 ## Available feature flags
 
 Set a gate with `hub-core.api.featureFlags.gates.<Gate>`; drop the leading
-`hub-core.` if you install the `hub-api` subchart on its own. The gate name is
-also the name that appears in the generated `flags.json` and in the `hub-api`
-startup logs. The **Default** column follows each feature's maturity: alpha
-features default to `false`, beta features to `true`.
+`hub-core.` if you install the `hub-core` subchart on its own. The gate name is
+also the name that appears in `FEATURE_GATES` and in the `hub-core` startup
+logs. Every gate in this release is alpha, and all but one default to `false`.
 
 <!-- vale Google.WordList = NO -->
 | Gate | Default | What it enables |
 |------|---------|-----------------|
-| `AgentSessions` | `false` | The `agent.hub.upbound.io/v1alpha1` API group, adding chat and session endpoints under `/apis/agent.hub.upbound.io/v1alpha1/` for Crossplane troubleshooting. Requires an Anthropic API key (see below). |
+| `AgentSessions` | `false` | The `agent.hub.upbound.io/v1alpha1` API group, adding session and message endpoints under `/apis/agent.hub.upbound.io/v1alpha1/` for Crossplane troubleshooting. Requires an Anthropic API key (see below). |
+| `AggregatedTypes` | `false` | Fleet-wide `typedefinitions` and `crossplanepackages`, and their distribution subresources, under `hub.upbound.io/v1alpha1`. |
 | `Catalog` | `false` | The Catalog feature as a unit: the read API (`catalog.hub.upbound.io/v1alpha1`) covering Image list and get, usage, curated, OpenAPI subresources, and ImageSearch, plus the ingest and enrichment pipeline that populates it. |
+| `Metrics` | `false` | The metrics ingest endpoint and the `metrics.hub.upbound.io` API group. Requires `hub-core.otelGateway.enabled=true`. |
 | `Registry` | `false` | The `registry.hub.upbound.io` API group, providing the `Connection` resource (with its `verify` subresource) and the `Repository` resource. |
-| `ResourceFilterExpression` | `false` | CEL-based filtering on resource-list endpoints. |
+| `ResourceFilterExpression` | `true` | CEL-based filtering on resource-list endpoints. Not enforced in this release, see below. |
 
 ### Agent sessions require an Anthropic API key
 
@@ -60,21 +68,43 @@ hub-core:
     featureFlags:
       gates:
         AgentSessions: true
-    features:
-      agentSessions:
-        anthropicApiKey:
-          existingSecretRef:
+    extraEnv:
+      - name: AGENT_SESSIONS_ANTHROPIC_API_KEY
+        valueFrom:
+          secretKeyRef:
             name: hub-agent-anthropic
             key: ANTHROPIC_API_KEY
 ```
+
+The chart has no dedicated value for the key. `hub-core` reads it from the
+`AGENT_SESSIONS_ANTHROPIC_API_KEY` environment variable, so `extraEnv` is how
+you supply it. `hub-core` exits at startup when the gate is on and the key is
+empty.
+
+See [Agent sessions](../features/agent-sessions/overview.md) for what the
+feature does and how to verify it started.
 
 ### Catalog
 
 The `Catalog` gate turns the feature on as a unit: the read API and the ingest
 and enrichment pipeline that populates it move together behind the one gate. See
 [Catalog](../features/catalog/overview.md) for what the feature does and [Enable
-and configure Catalog](../features/catalog/configuration.md) for the full setup,
-including the `Registry` gate for private registries.
+and configure Catalog](../features/catalog/configuration.md) for the full setup.
+
+### Registry
+
+The `Registry` gate supplies the credentials Catalog uses to pull from private
+or self-hosted registries. See [Registry](../features/registry/overview.md) and
+[Enable and configure Registry](../features/registry/configuration.md).
+
+### Resource filter expressions
+
+The `ResourceFilterExpression` gate is the one gate that defaults to `true`, and
+`hub-core` doesn't check it. Expression filtering is available on a default
+install, and setting the gate to `false` doesn't turn it off. What determines
+availability is the API version: `hub.upbound.io/v1beta1` and `v1alpha2` accept
+the `filter` parameter, and `v1alpha1` ignores it. See [Resource filter
+expressions](../features/resource-filtering/overview.md).
 
 ## Enabling a feature gate
 
@@ -106,8 +136,8 @@ helm upgrade --install hub <chart-ref> \
   --set hub-core.api.featureFlags.gates.ResourceFilterExpression=true
 ```
 
-The upgrade rolls the `hub-api` Pods, and the feature becomes active once they
-are `Ready`. The `hub-api` startup logs list every gate it evaluates, so
+The upgrade rolls the `hub-core` Pods, and the feature becomes active once they
+are `Ready`. The `hub-core` startup logs list every gate it evaluates, so
 you can confirm the running binary picked up your change.
 
 Disabling a beta feature works the same way in reverse. Set its gate to `false`
@@ -115,11 +145,16 @@ to turn off a feature that defaults to on.
 
 ## Managing flags outside the chart
 
-Two escape hatches exist for teams that manage flag definitions themselves:
+For teams that manage flag definitions themselves:
 
-- **External ConfigMap.** Set `hub-core.api.featureFlags.configMapRef.name` to a
-  ConfigMap you maintain (it must contain a `flags.json` key). The chart then
-  skips generating one from `gates.*`, and you own the flag definitions.
+- **Targeting overlay.** Set
+  `hub-core.api.featureFlags.targetingOverlay.configMapRef.name` to a ConfigMap
+  you maintain, holding a flagd `flags.json` under the key named by
+  `targetingOverlay.configMapRef.key` (default `flags.json`). The overlay doesn't
+  replace the gates. It layers JSONLogic targeting rules or extra variants on top
+  of them, which is how you roll a feature out per organization or per control
+  plane rather than fleet-wide. `hub-core` hot-reloads the ConfigMap, so edits
+  take effect without restarting the Pods.
 - **OFREP endpoint.** The flag server serves OFREP on port `8016` for
   client-side evaluation. It's not exposed publicly by default. To route it
   through the public HTTPRoute, set

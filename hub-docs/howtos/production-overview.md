@@ -17,13 +17,13 @@ Hub serves production traffic.
 Pick replica counts, resource requests, and a Postgres tier that match your
 workload before you turn on redundancy or autoscaling. Both depend on a sensible
 baseline. Your connector count, the resources tracked per
-connector, and the query rate against `hub-api` drive sizing. The sizing page defines small,
+connector, and the query rate against `hub-core` drive sizing. The sizing page defines small,
 medium, and large tiers with concrete numbers for each and a short decision tree
 for picking a starting tier. See [Sizing][sizing].
 
 ## High availability
 
-Once you have a tier, run `hub-api` and `hub-webui` with more than one replica
+Once you have a tier, run `hub-core` and `hub-webui` with more than one replica
 and spread them across nodes with anti-affinity. Bound voluntary disruptions
 with a PodDisruptionBudget. The HA page walks the Helm values for each
 (replicas, PDBs, topology spread) and verifies that a node drain no longer takes
@@ -33,13 +33,13 @@ the UI offline. See [High availability][high-availability].
 <!-- vale write-good.Weasel = NO -->
 Static replica counts cover steady-state load. Traffic can vary: daily
 peaks, ad-hoc query bursts, or growth that outruns your sizing tier. For that, enable the
-HorizontalPodAutoscaler for `hub-api` so Pod count tracks CPU. See
+HorizontalPodAutoscaler for `hub-core` so Pod count tracks CPU. See
 [Autoscaling][autoscaling].
 <!-- vale write-good.Weasel = YES -->
 
 ## RBAC
 
-The demo bootstraps an organisation-level admin binding for a Keycloak group,
+The demo bootstraps an organization-level admin binding for a Keycloak group,
 which lets you log in immediately. For production, retarget that binding at a
 group from your real OIDC provider and add ControlPlane-scoped bindings for the
 rest of your users. The RBAC page documents Hub's role model alongside the
@@ -49,7 +49,7 @@ those groups to organization-level and ControlPlane-level roles. See
 
 ## Upgrades
 
-Hub bundles `hub-api`, `hub-connector`, and `hub-webui` in a single chart on one
+Hub bundles `hub-core`, `hub-connector`, and `hub-webui` in a single chart on one
 release train, and schema migrations run automatically as part of `helm
 upgrade`. That means upgrades are quick to perform and carry real risk if you get them wrong.
 Migrations are forward-only, so a chart rollback doesn't undo a schema change.

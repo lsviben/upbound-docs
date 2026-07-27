@@ -4,9 +4,8 @@ sidebar_position: 2
 description: Install Hub with Helm against external Postgres and OIDC.
 ---
 
-This page walks you through installing and managing a self-hosted version of the
-Hub. Through this process, you set up a PostgreSQL database, connect an
-OIDC provider and configure your ingress routes.
+A self-hosted Hub install needs a PostgreSQL database, an OIDC provider, and
+ingress routes for the Hub services.
 
 ## Prerequisites
 
@@ -30,7 +29,28 @@ You should also know:
 - **Your OIDC issuer URL, client ID, and client secret.** Hub validates the
   issuer's discovery document at startup.
 - **Your Postgres connection details.** Host, port, database name, user, SSL
-  mode, and either a password or an IAM role for the `hub-api` ServiceAccount.
+  mode, and either a password or an IAM role for the `hub-core` ServiceAccount.
+
+## The chart reference
+
+Hub docs write the chart as `<chart-ref>`. Substitute the umbrella chart's OCI
+reference:
+
+```bash
+oci://xpkg.upbound.io/upbound/hub
+```
+
+Helm resolves the latest release when you don't pass `--version`. Add
+`--version <version>` to pin a release, which is what you want in a production
+pipeline so an upgrade is a deliberate change rather than a side effect of
+running the command again.
+
+:::note
+Helm skips prerelease versions when it resolves a chart. While Hub publishes
+only release candidates, `helm install` and `helm upgrade` fail with
+`Could not locate a version matching provided version string` unless you pass an
+explicit `--version`, such as `--version 1.0.0-rc.2`.
+:::
 
 ## Install
 
@@ -52,15 +72,15 @@ For password authentication, create a Secret holding the database password under
 the key `password`:
 
 ```bash
-kubectl -n hub create secret generic hub-api-postgres \
+kubectl -n hub create secret generic hub-core-postgres \
   --from-literal=password='<your-postgres-password>'
 ```
 
 You reference this Secret from `values.yaml` in step 4 via
-`hub-api.postgresql.auth.passwordSecretRef`.
+`hub-core.postgresql.auth.password.existingSecretRef`.
 
 :::note
-Hub doesn't require the Secret name `hub-api-postgres`. Any Secret in the same
+Hub doesn't require the Secret name `hub-core-postgres`. Any Secret in the same
 namespace as the release works as long as the key holding the password matches
 the `key` field you set in values.
 :::
@@ -76,7 +96,7 @@ value to live in a Kubernetes Secret you reconcile separately, create it now:
 <!-- vale Microsoft.Adverbs = YES -->
 
 ```bash
-kubectl -n hub create secret generic hub-api-oidc \
+kubectl -n hub create secret generic hub-core-oidc \
   --from-literal=clientSecret='<your-oidc-client-secret>'
 ```
 
@@ -84,7 +104,7 @@ You can then pass the value to Helm at install time by extracting it from the
 Secret:
 
 ```bash
-OIDC_CLIENT_SECRET=$(kubectl -n hub get secret hub-api-oidc \
+OIDC_CLIENT_SECRET=$(kubectl -n hub get secret hub-core-oidc \
   -o jsonpath='{.data.clientSecret}' | base64 -d)
 ```
 
@@ -129,15 +149,15 @@ global:
             - kind: Secret
               name: <your-tls-secret>
 
-hub-api:
+hub-core:
   api:
-    # Externally reachable base URL for hub-api. Used to compose
+    # Externally reachable base URL for hub-core. Used to compose
     # the OIDC callback URI (<externalURL>/oidc/callback) and
     # surfaced to hub-webui for browser redirects.
     externalURL: https://api.<your-domain>
 
     # OIDC identity provider. issuerURL and clientID must be set
-    # for hub-api to bootstrap an IdentityProvider at startup.
+    # for hub-core to bootstrap an IdentityProvider at startup.
     sampleEmailBasedOIDCConfig:
       providerName: oidc
       issuerURL: <your-oidc-issuer-url>
@@ -162,10 +182,11 @@ hub-api:
       # password (default) or iam. Use iam with cloud=aws on RDS;
       # see databases/aws-rds.md.
       mode: password
-      # Reference to the Secret created in step 2.
-      passwordSecretRef:
-        name: hub-api-postgres
-        key: password
+      password:
+        # Reference to the Secret created in step 2.
+        existingSecretRef:
+          name: hub-core-postgres
+          key: password
 ```
 
 Notes on the template:
@@ -174,9 +195,9 @@ Notes on the template:
   If your platform team already manages a shared Gateway, leave `create: false`
   and point `parentRef` at it. If you want the chart to render a dedicated
   Gateway, set `create: true` and supply `gatewayClassName`.
-- `hub-api.api.externalURL` must match the hostname clients (browsers and CLI
-  tools) use to reach `hub-api`.
-- `hub-api.postgresql.connectionString` takes precedence over the structured
+- `hub-core.api.externalURL` must match the hostname clients (browsers and CLI
+  tools) use to reach `hub-core`.
+- `hub-core.postgresql.connectionString` takes precedence over the structured
   `host`/`port`/`database`/`user`/`sslmode` keys.
 
 :::note
@@ -193,7 +214,7 @@ Install the chart with `values.yaml` and the OIDC client secret passed inline:
 helm install hub <chart-ref> \
   --namespace hub \
   --values values.yaml \
-  --set hub-api.api.sampleEmailBasedOIDCConfig.clientSecret="$OIDC_CLIENT_SECRET"
+  --set hub-core.api.sampleEmailBasedOIDCConfig.clientSecret="$OIDC_CLIENT_SECRET"
 ```
 
 If you didn't extract the OIDC client secret into a shell variable in step 3,
@@ -205,7 +226,7 @@ Wait for the install to finish and for all Pods to become Ready:
 kubectl -n hub wait --for=condition=ready pod --all --timeout=5m
 ```
 
-On first install, `hub-api` runs a migration init container against your
+On first install, `hub-core` runs a migration init container against your
 Postgres database before the main container starts. The wait above blocks until
 that migration completes.
 
@@ -219,8 +240,8 @@ Check that all Hub Pods are Ready:
 kubectl -n hub get pods
 ```
 
-You should see Ready replicas for `hub-api` and `hub-webui`. The umbrella chart includes the `hub-connector`
-Deployment, but `hub-api` itself doesn't use it. It activates only when you install a connector on an observed cluster.
+You should see Ready replicas for `hub-core` and `hub-webui`. The umbrella chart includes the `hub-connector`
+Deployment, but `hub-core` itself doesn't use it. It activates only when you install a connector on an observed cluster.
 
 Open `https://ui.<your-domain>` in a browser. The browser should redirect to your
 OIDC provider for login, then returned to the Hub UI.
@@ -232,7 +253,7 @@ bindings by default. The next section adds those.
 ## Configure
 
 The bootstrap steps below register your first ControlPlane and grant your OIDC
-admin group organisation-wide admin rights.
+admin group organization-wide admin rights.
 
 ### Bootstrap the first control plane
 
@@ -264,14 +285,14 @@ kubectl apply -f bootstrap-controlplane.yaml
 ```
 
 The `spec.identityProviders[].name` value must match the `providerName` you set
-in `hub-api.api.sampleEmailBasedOIDCConfig.providerName`. Hub uses that
+in `hub-core.api.sampleEmailBasedOIDCConfig.providerName`. Hub uses that
 IdentityProvider to resolve users referenced by role bindings on this
 ControlPlane.
 
 ### Mint a registration token
 
 After you create the ControlPlane, mint a registration token for it. The token
-is what `hub-connector` presents when it first contacts `hub-api`:
+is what `hub-connector` presents when it first contacts `hub-core`:
 
 ```bash
 kubectl create -f - <<'EOF'
@@ -297,7 +318,7 @@ Docker-network address.
 ### Bootstrap the admin OrganizationRoleBinding
 <!-- vale Google.Headings = YES -->
 
-Grant your OIDC admin group organisation-wide admin rights. The `name` on the
+Grant your OIDC admin group organization-wide admin rights. The `name` on the
 `Group` subject must match the value Hub sees in the OIDC token's group claim,
 prefixed with `<providerName>:`. With `providerName: oidc` and an OIDC group
 named `hub-admins`, the subject name is `oidc:hub-admins`.
@@ -323,7 +344,7 @@ kubectl apply -f bootstrap-org-admin.yaml
 ```
 
 :::note
-The chart also accepts `hub-api.bootstrap.files` for delivering ControlPlanes,
+The chart also accepts `hub-core.bootstrap.files` for delivering ControlPlanes,
 IdentityProviders, and OrganizationRoleBindings as part of the Helm release.
 Applying them post-install with `kubectl` (as above) keeps role bindings out of
 the chart values and makes them easier to change without a Helm upgrade.

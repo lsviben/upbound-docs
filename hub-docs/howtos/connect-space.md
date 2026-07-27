@@ -7,15 +7,13 @@ description: Connect a space to Upbound Platform to observe its resources and co
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## Overview
+Connecting a self-hosted Spaces cluster to the Upbound platform
+allows you to observe its resources in the Console or hub API and automatically
+connects the control planes it manages.
 
-This page walks you through connecting a self-hosted Spaces cluster to
-Upbound Platform. Connecting a space allows its resources to be observed in the
-Console or hub API, and automatically connects the control planes it manages.
-
-A connected space's resources are represented by a control plane named
-`space-<space-name>` in the `default` realm. Its control planes are connected as
-`<space-name>.<control-plane-name>` in the realm corresponding to their
+Resources in a connected space appear in the `default` realm under a control
+plane named `space-{space-name}`. Connected space control planes appear as
+`{space-name}.{control-plane-name}` in the realm corresponding to their
 namespace on the space cluster.
 
 :::note
@@ -60,10 +58,10 @@ Write the space manifest. A space is cluster-scoped and has an empty spec:
 apiVersion: hub.upbound.io/v1beta1
 kind: Space
 metadata:
-  name: <space-name>
+  name: <space-name>k
 ```
 
-Create it. The registration token is only returned in the create response, so
+Create it. The registration token is only returned in the create respo{}nse, so
 capture it now (see Step 2):
 
 ```bash
@@ -79,9 +77,11 @@ REGISTRATION_TOKEN=$(kubectl --context=hub create -f space.yaml \
 Capture the registration token from Step 1. Use it to deploy the
 connector in Step 3.
 
+
 :::warning
-The registration token is shown once. It's valid for 24 hours, can be used only
-once, and can't be retrieved after being created. You may reissue the token,
+The Console and kubectl return the registration token only once.
+This one-time-use token is valid for 24 hours and you can't retrieve it after
+creation. You may reissue the token,
 which invalidates the existing token.
 :::
 
@@ -259,7 +259,7 @@ kubectl --context="$SPACE_CONTEXT" --namespace upbound-system \
   rollout restart deployment hub-connector
 ```
 
-### The space stays Pending
+### The space stays `Pending`
 
 A space stays `Pending` until its connector completes registration. Check the
 phase:

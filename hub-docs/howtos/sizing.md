@@ -21,22 +21,22 @@ Three numbers drive every sizing decision for Hub. Measure or estimate yours
 before reading the tiers below.
 
 **Connectors connected.** One `hub-connector` runs in each observed control
-plane and pushes resource state to `hub-api`. The connector count is the upper
-bound on how many concurrent writers `hub-api` sees, and it grows linearly
+plane and pushes resource state to `hub-core`. The connector count is the upper
+bound on how many concurrent writers `hub-core` sees, and it grows linearly
 with the control planes you operate.
 
 **Resources tracked per connector.** Each connector watches Crossplane-managed
-resources in its host cluster and reports them to `hub-api`, which persists them
+resources in its host cluster and reports them to `hub-core`, which persists them
 in PostgreSQL. The total resource count across all connectors is the primary
 driver of database size, query latency, and connector memory. A small platform
 team running a handful of managed resources per cluster sits at one end. A fleet
 replicating thousands of provider resources per control plane sits at the other.
 
 <!-- vale write-good.Weasel = NO -->
-**Query RPS against `hub-api`.** Every Hub UI page load, every CLI call, and
+**Query RPS against `hub-core`.** Every Hub UI page load, every CLI call, and
 every external automation client that lists or watches resources lands as HTTP
-traffic on `hub-api`. Sustained read RPS (not peak) determines how many
-`hub-api` replicas you need and how much headroom Postgres needs for read
+traffic on `hub-core`. Sustained read RPS (not peak) determines how many
+`hub-core` replicas you need and how much headroom Postgres needs for read
 queries. A small team browsing the UI generates a few requests per second. Broad
 automation or many concurrent UI users push it higher.
 <!-- vale write-good.Weasel = YES -->
@@ -45,9 +45,9 @@ Plug your numbers into the tiers below.
 
 ## Sizing tiers
 
-The tiers describe `hub-api` replica count, `hub-api` per-pod resource requests
+The tiers describe `hub-core` replica count, `hub-core` per-pod resource requests
 and limits, `hub-connector` per-pod resources, and a recommended Postgres tier.
-The chart includes empty `resources: {}` for `hub-api` and `hub-connector` by
+The chart includes empty `resources: {}` for `hub-core` and `hub-connector` by
 default. Set the values shown here explicitly via your `values.yaml`.
 
 ### Small
@@ -59,9 +59,9 @@ handful of clusters.
 
 - **Workload envelope:** up to 5 connectors, up to 50,000 resources total, under
   50 query RPS sustained.
-- **`hub-api` replicas:** 2, for redundancy across nodes. See [high
+- **`hub-core` replicas:** 2, for redundancy across nodes. See [high
   availability][high-availability].
-- **`hub-api` resources per pod:** requests `cpu: 250m`, `memory: 512Mi`. Limits
+- **`hub-core` resources per pod:** requests `cpu: 250m`, `memory: 512Mi`. Limits
   `memory: 1Gi`.
 - **`hub-connector` resources per pod:** requests `cpu: 100m`, `memory: 128Mi`.
   Limits `memory: 256Mi`.
@@ -69,32 +69,34 @@ handful of clusters.
   GiB) with 50 GiB gp3 storage works well. No read replica needed.
 
 ```yaml
-hub-api:
-  replicaCount: 2
-  resources:
-    requests:
-      cpu: 250m
-      memory: 512Mi
-    limits:
-      memory: 1Gi
+hub-core:
+  api:
+    replicaCount: 2
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        memory: 1Gi
 
 hub-connector:
-  resources:
-    requests:
-      cpu: 100m
-      memory: 128Mi
-    limits:
-      memory: 256Mi
+  connector:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        memory: 256Mi
 ```
 
 ### Medium
 
-For production installs serving a platform organisation with a moderate fleet.
+For production installs serving a platform organization with a moderate fleet.
 
 - **Workload envelope:** up to 25 connectors, up to 500,000 resources total, 50
   to 250 query RPS sustained.
-- **`hub-api` replicas:** 3.
-- **`hub-api` resources per pod:** requests `cpu: 500m`, `memory: 1Gi`. Limits
+- **`hub-core` replicas:** 3.
+- **`hub-core` resources per pod:** requests `cpu: 500m`, `memory: 1Gi`. Limits
   `memory: 2Gi`.
 - **`hub-connector` resources per pod:** requests `cpu: 200m`, `memory: 256Mi`.
   Limits `memory: 512Mi`.
@@ -103,22 +105,24 @@ For production installs serving a platform organisation with a moderate fleet.
   Enable storage autoscaling.
 
 ```yaml
-hub-api:
-  replicaCount: 3
-  resources:
-    requests:
-      cpu: 500m
-      memory: 1Gi
-    limits:
-      memory: 2Gi
+hub-core:
+  api:
+    replicaCount: 3
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        memory: 2Gi
 
 hub-connector:
-  resources:
-    requests:
-      cpu: 200m
-      memory: 256Mi
-    limits:
-      memory: 512Mi
+  connector:
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        memory: 512Mi
 ```
 
 ### Large
@@ -127,9 +131,9 @@ For broad fleets and heavy automation traffic.
 
 - **Workload envelope:** up to 100 connectors, up to 2,500,000 resources total,
   250 to 1,000 query RPS sustained.
-- **`hub-api` replicas:** 5, with the [Horizontal Pod
+- **`hub-core` replicas:** 5, with the [Horizontal Pod
   Autoscaler][autoscaling] enabled to absorb bursts.
-- **`hub-api` resources per pod:** requests `cpu: 1`, `memory: 2Gi`. Limits
+- **`hub-core` resources per pod:** requests `cpu: 1`, `memory: 2Gi`. Limits
   `memory: 4Gi`.
 - **`hub-connector` resources per pod:** requests `cpu: 500m`, `memory: 512Mi`.
   Limits `memory: 1Gi`. Consider scoping `connector.controlPlane.apiGroups` to
@@ -141,27 +145,29 @@ For broad fleets and heavy automation traffic.
   reads.
 
 ```yaml
-hub-api:
-  replicaCount: 5
-  resources:
-    requests:
-      cpu: 1
-      memory: 2Gi
-    limits:
-      memory: 4Gi
-  autoscaling:
-    enabled: true
-    minReplicas: 5
-    maxReplicas: 15
-    targetCPUUtilizationPercentage: 70
+hub-core:
+  api:
+    replicaCount: 5
+    resources:
+      requests:
+        cpu: 1
+        memory: 2Gi
+      limits:
+        memory: 4Gi
+    autoscaling:
+      enabled: true
+      minReplicas: 5
+      maxReplicas: 15
+      targetCPUUtilizationPercentage: 70
 
 hub-connector:
-  resources:
-    requests:
-      cpu: 500m
-      memory: 512Mi
-    limits:
-      memory: 1Gi
+  connector:
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        memory: 1Gi
 ```
 
 ## Pick your tier
@@ -178,7 +184,7 @@ a tier.
    move up one tier. More than 50,000 per connector → move up two tiers and
    scope `connector.controlPlane.apiGroups` so you only watch the provider
    groups you actually use.
-3. **What sustained query RPS does `hub-api` see?** Under 50 → the tier so far
+3. **What sustained query RPS does `hub-core` see?** Under 50 → the tier so far
    stands. 50 to 250 → at least `medium`. Above 250 → at least `large`, with the
    Horizontal Pod Autoscaler enabled.
 
@@ -192,7 +198,7 @@ production.
 - [Run Hub with redundancy][high-availability]. Set replica counts, pod
   disruption budgets, and anti-affinity for the tier you picked.
 - [Configure autoscaling][autoscaling]. Enable the Horizontal Pod Autoscaler
-  for `hub-api` and turn on storage autoscaling on your Postgres tier.
+  for `hub-core` and turn on storage autoscaling on your Postgres tier.
 
 [autoscaling]: /hub/howtos/autoscaling
 [high-availability]: /hub/howtos/high-availability

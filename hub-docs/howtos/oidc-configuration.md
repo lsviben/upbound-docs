@@ -4,9 +4,6 @@ sidebar_position: 3
 description: Configure Hub against an external OIDC provider.
 ---
 
-This page explains what Hub requires from an OIDC provider, the order to
-configure it, and how to pick a provider-specific sub-guide.
-
 Hub delegates all human authentication to an external OIDC provider. The
 provider issues ID tokens to users logging in to the Hub UI. Hub trusts those
 tokens and reads identity and group claims to drive authorization.
@@ -33,8 +30,8 @@ following criteria works with Hub:
   privileges within the system.
 - **Redirect URI.** The provider must accept Hub's callback URL as a registered
   redirect URI. The callback is always `<externalURL>/oidc/callback`, where
-  `<externalURL>` is the public base URL of `hub-api` (set via
-  `hub-api.api.externalURL`).
+  `<externalURL>` is the public base URL of `hub-core` (set via
+  `hub-core.api.externalURL`).
 <!-- vale Google.WordList = YES -->
 
 :::note
@@ -59,7 +56,7 @@ Done in your OIDC provider's console or API, before touching Hub.
   you control. Note the claim name.
 - Register Hub as a client application. Record the client ID and client secret.
 - Configure the redirect URI as `<externalURL>/oidc/callback`. You must know the
-  public hostname of `hub-api` before this step.
+  public hostname of `hub-core` before this step.
 - Look up the well-known discovery URL (the issuer URL) for the provider. This
   is the value you give to Hub.
 
@@ -68,9 +65,9 @@ Done in your OIDC provider's console or API, before touching Hub.
 Done in your Helm values, after you configure the provider.
 <!-- vale write-good.Passive = NO -->
 <!-- vale write-good.Weasel = NO -->
-- Set `hub-api.api.externalURL` to the public base URL of `hub-api`. The
+- Set `hub-core.api.externalURL` to the public base URL of `hub-core`. The
   redirect URI you registered in stage 1 must match this exactly.
-- Set the OIDC values under `hub-api.api.sampleEmailBasedOIDCConfig`:
+- Set the OIDC values under `hub-core.api.sampleEmailBasedOIDCConfig`:
   - `providerName`. A short identifier used as a prefix on usernames and group
     names (such as `entra`, `google`, `cognito`). Defaults to `oidc`.
   - `issuerURL`. The issuer URL from stage 1.
@@ -108,7 +105,7 @@ the redirect URI from [Setup Order](#setup-order).
 
 Once the application exists, the only Hub-side settings that differ between
 providers are the `issuerURL` and how group memberships reach the ID token.
-Everything else in the `hub-api.api.sampleEmailBasedOIDCConfig` block from
+Everything else in the `hub-core.api.sampleEmailBasedOIDCConfig` block from
 stage 2 stays the same. The deviations for each provider are below.
 
 ### Standards-compliant providers
@@ -132,7 +129,7 @@ for user pool and app client setup.
 - `issuerURL`: `https://cognito-idp.<region>.amazonaws.com/<user-pool-id>`.
 - Groups: membership is published under `cognito:groups`, not
   `groups`. The generated `IdentityProvider` maps only the username claim, so
-  supply a customised provider via `hub-api.bootstrap.files` that overrides the
+  supply a customised provider via `hub-core.bootstrap.files` that overrides the
   group claim:
 <!-- vale write-good.Passive = YES -->
 

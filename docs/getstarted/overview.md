@@ -43,7 +43,7 @@ Find more installation methods on the [Up CLI installation guide][up].
   {
     title: 'New to Crossplane and Upbound?',
     description: 'Follow the introduction guide to build your first control plane from scratch.',
-    link: '/getstarted/new-users/new-to-control-planes'
+    link: '/getstarted/controlplanes-quickstart'
   },
   {
     title: 'Already running open source Crossplane?',

@@ -121,7 +121,7 @@ subjects:
   name: function-analysis-gate
   namespace: crossplane-system
 ---
-# crossplane needs permissions to manage Analyses for correspinding 
+# crossplane needs permissions to manage Analyses for corresponding 
 # WatchOperations.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -172,7 +172,7 @@ subjects:
   name: function-remediation-gate
   namespace: crossplane-system
 ---
-# crossplane needs permissions to watch Remediations for correspinding 
+# crossplane needs permissions to watch Remediations for corresponding 
 # WatchOperations.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -190,7 +190,7 @@ rules:
   - list
   - watch
 ---
-# crossplane needs permissions to watch Remediations for correspinding 
+# crossplane needs permissions to watch Remediations for corresponding 
 # WatchOperations.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

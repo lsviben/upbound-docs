@@ -4,12 +4,11 @@ sidebar_position: 2
 description: Provision Amazon RDS for PostgreSQL and connect Hub with IAM auth.
 ---
 
-This page walks you through provisioning Amazon RDS for PostgreSQL. You grant
-Hub a database role that authenticates with AWS IAM, then point the chart at the
-resulting endpoint.
+Provision Amazon RDS for PostgreSQL, grant Hub a database role that
+authenticates with AWS IAM, then point the chart at the resulting endpoint.
 
 IAM authentication is the recommended path for self-hosted Hub on AWS. The
-`hub-api` Pod mints a short-lived RDS auth token per database connection from
+`hub-core` Pod mints a short-lived RDS auth token per database connection from
 credentials supplied by IAM Roles for Service Accounts (IRSA) or EKS Pod
 Identity. Your cluster doesn't store a static database password.
 
@@ -64,7 +63,7 @@ When you create the instance, set the following:
   single database or role.
  - **Network**: place the instance in private subnets
   and attach a security group that allows inbound TCP 5432 from the security group attached to the worker
-  nodes that run `hub-api`.
+  nodes that run `hub-core`.
 - **TLS**: RDS terminates TLS by default. Note the CA bundle you need to
   trust, since RDS rotates these on a published schedule.
 
@@ -78,26 +77,26 @@ Record three values once the instance is available:
 - the AWS region (for example, `us-east-1`).
 
 :::warning
-Enabling IAM database authentication on an existing instance triggers a reboot.
-Schedule it.
+Enabling IAM database authentication on an existing instance triggers a reboot,
+so schedule it during a maintenance window.
 :::
 
 ## Configure IAM authentication
 
 IAM auth for RDS has three sides that must agree:
 
-1. An IAM role the `hub-api` Pod can assume.
+1. An IAM role the `hub-core` Pod can assume.
 2. A policy on that role granting `rds-db:connect` for the database user Hub
    logs in as.
-3. A PostgreSQL role with the same name as the IAM user, granted the `rds_iam`
-   role inside the database.
+3. A PostgreSQL role with the same name as the IAM user, granted the `rds_iam` role inside the database.
 
 ### Create the database role
 
-Connect to the instance as the master user and create the role Hub uses. The
-role needs the `rds_iam` grant so RDS accepts IAM-issued tokens for it. It also
-needs ownership of the Hub database so migrations can create and alter
-objects.
+Connect to the instance as the master user and create the role Hub uses. This
+role needs the `rds_iam` grant so RDS accepts IAM-issued tokens for it, as
+described in [Creating a database account using IAM
+authentication][iam-db-accounts]. It also needs ownership of the Hub database so
+migrations can create and alter objects.
 
 ```sql
 CREATE DATABASE hub;
@@ -131,134 +130,65 @@ granted `rds_iam` can't also log in with a password. Don't set a password on
 
 ### Create the IAM policy
 
-The policy below grants `rds-db:connect` for the `hub` database role on a
-specific RDS instance. Replace `<region>`, `<account-id>`, and
-`<dbi-resource-id>` with your values.
+Follow [Creating and using an IAM policy for IAM database
+access][iam-policy-for-db-access]. Hub needs one statement, allowing
+`rds-db:connect` on the `hub` database role:
 
-Save this as `hub-rds-connect-policy.json`:
+| Field | Value for Hub |
+| --- | --- |
+| Action | `rds-db:connect` |
+| Resource | `arn:aws:rds-db:<region>:<account-id>:dbuser:<dbi-resource-id>/hub` |
 
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": "rds-db:connect",
-      "Resource": "arn:aws:rds-db:<region>:<account-id>:dbuser:<dbi-resource-id>/hub"
-    }
-  ]
-}
-```
+The final segment of the resource ARN is the database role name, `hub`, and
+`<dbi-resource-id>` is the `db-…` string you recorded above, not the instance
+name.
 
-Create the policy:
+Record the resulting policy ARN. You attach it to the role in the next section.
 
-```bash
-aws iam create-policy \
-  --policy-name HubRDSConnect \
-  --policy-document file://hub-rds-connect-policy.json
-```
+### Bind the policy to the hub-core ServiceAccount
 
-Record the resulting policy ARN.
+Attach the policy to an IAM role the `hub-core` Pod can assume. AWS offers two
+mechanisms. IRSA works on any EKS cluster with an IAM OIDC provider. Pod Identity
+is simpler to manage where it's available.
 
-### Bind the policy to the hub-api ServiceAccount
+Whichever you pick, the role identifies the Pod by its Kubernetes
+ServiceAccount. The chart creates that ServiceAccount, so these values are what
+AWS's procedure needs:
 
-Pick one of the two binding mechanisms below. IRSA is older and works on any EKS
-cluster with an OIDC provider. Pod Identity is simpler to manage when available.
+| What the AWS procedure asks for | Value for Hub |
+| --- | --- |
+| Namespace | `hub`, or the namespace you install the release into |
+| ServiceAccount name | `hub-core` |
+| IRSA trust policy `sub` condition | `system:serviceaccount:hub:hub-core` |
+| IRSA trust policy `aud` condition | `sts.amazonaws.com` |
 
+<!-- vale Microsoft.HeadingAcronyms = NO -->
 #### Option A: IAM roles for service accounts (IRSA)
+<!-- vale Microsoft.HeadingAcronyms = YES -->
 
-Confirm your EKS cluster has an IAM OIDC provider:
+Follow [Assign IAM roles to Kubernetes service accounts][associate-sa-role],
+using the subject and audience conditions from the table above. If your
+cluster's OIDC issuer isn't registered with IAM yet, do [Create an IAM OIDC
+provider][create-an-iam-oidc-provider] first.
 
-```bash
-aws eks describe-cluster --name <cluster-name> \
-  --query "cluster.identity.oidc.issuer" --output text
-```
-
-If the issuer URL isn't yet registered with IAM, follow [Create an IAM OIDC
-provider][create-an-iam-oidc-provider]
-before continuing.
-
-Save this as `hub-api-trust-policy.json`, substituting your account ID, region,
-and the OIDC provider hostname returned above. The ServiceAccount name `hub-api`
-and namespace `hub` must match what the chart creates.
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Federated": "arn:aws:iam::<account-id>:oidc-provider/<oidc-provider-host>"
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition": {
-        "StringEquals": {
-          "<oidc-provider-host>:sub": "system:serviceaccount:hub:hub-api",
-          "<oidc-provider-host>:aud": "sts.amazonaws.com"
-        }
-      }
-    }
-  ]
-}
-```
-
-Create the role and attach the policy:
-
-```bash
-aws iam create-role \
-  --role-name hub-api \
-  --assume-role-policy-document file://hub-api-trust-policy.json
-
-aws iam attach-role-policy \
-  --role-name hub-api \
-  --policy-arn <hub-rds-connect-policy-arn>
-```
-
-When you install Hub, the chart creates the `hub-api` ServiceAccount. You
-annotate it with the role ARN through Helm values (shown in the next
-section).
+You then annotate the ServiceAccount with the role ARN through Helm values,
+shown in the next section.
 
 #### Option B: EKS pod identity
 
-[EKS Pod
-Identity][eks-pod-identity]
-replaces the OIDC trust policy with a simpler ServiceAccount-to-role association
-managed by EKS.
-
-Create a role whose trust policy lets the Pod Identity agent assume it:
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": { "Service": "pods.eks.amazonaws.com" },
-      "Action": ["sts:AssumeRole", "sts:TagSession"]
-    }
-  ]
-}
-```
-
-Attach the RDS connect policy as in Option A, then create the association after
-you install hub:
-
-```bash
-aws eks create-pod-identity-association \
-  --cluster-name <cluster-name> \
-  --namespace hub \
-  --service-account hub-api \
-  --role-arn arn:aws:iam::<account-id>:role/hub-api
-```
+Follow [Assign an IAM role to a Kubernetes service
+account][pod-id-association], creating the association against namespace `hub`
+and ServiceAccount `hub-core`. Create the association after you install Hub, so
+the ServiceAccount exists.
 
 <!-- vale write-good.Passive = NO -->
-With Pod Identity, the ServiceAccount itself needs no annotations. The
-association is keyed by namespace and ServiceAccount name on the EKS side.
+With Pod Identity the ServiceAccount needs no annotations. EKS keys the
+association by namespace and ServiceAccount name, so leave the
+`eks.amazonaws.com/role-arn` annotation out of your Helm values.
 
 ## Configure hub
 
-The IAM-auth Helm values omit any password Secret. `hub-api` reads the auth mode
+The IAM-auth Helm values omit any password Secret. `hub-core` reads the auth mode
 and cloud from environment variables emitted by the chart. It then builds an RDS
 auth token from the Pod's IAM credentials. It uses that token as the PostgreSQL
 password on every new pool connection. TLS is required: the chart forces
@@ -269,13 +199,13 @@ password on every new pool connection. TLS is required: the chart forces
 Save this as `values.yaml`, filling in the placeholders:
 
 ```yaml
-hub-api:
+hub-core:
   api:
     serviceAccount:
       create: true
       # Only needed for IRSA. Pod Identity does not use ServiceAccount annotations.
       annotations:
-        eks.amazonaws.com/role-arn: arn:aws:iam::<account-id>:role/hub-api
+        eks.amazonaws.com/role-arn: arn:aws:iam::<account-id>:role/hub-core
 
   postgresql:
     host: <rds-endpoint>
@@ -310,10 +240,10 @@ Use the discrete `host`, `port`, `database`, and `user` fields.
 
 ## Verify
 
-Watch the `hub-api` Pods roll out:
+Watch the `hub-core` Pods roll out:
 
 ```bash
-kubectl -n hub rollout status deployment/hub-api
+kubectl -n hub rollout status deployment/hub-core
 ```
 
 The Pod runs the schema migrator as an init container before the API server
@@ -341,7 +271,7 @@ errors.
 Use this section only if you can't use IAM authentication, such as when running
 outside AWS or on a Kubernetes cluster without workload identity. Password mode
 stores a long-lived credential in a Secret. Rotate it through whatever
-secret-management tool your organisation already uses.
+secret-management tool your organization already uses.
 
 Create the Secret in the Hub namespace:
 
@@ -354,7 +284,7 @@ kubectl -n hub create secret generic hub-postgres \
 Set these values instead of the IAM block:
 
 ```yaml
-hub-api:
+hub-core:
   postgresql:
     host: <rds-endpoint>
     port: 5432
@@ -364,9 +294,10 @@ hub-api:
 
     auth:
       mode: password
-      passwordSecretRef:
-        name: hub-postgres
-        key: password
+      password:
+        existingSecretRef:
+          name: hub-postgres
+          key: password
 ```
 
 Create the database role with a password rather than the `rds_iam`
@@ -390,7 +321,11 @@ against the database you just provisioned.
 [creating-a-postgresql-db-instance]: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_GettingStarted.CreatingConnecting.PostgreSQL.html
 [eks-pod-identity]: https://docs.aws.amazon.com/eks/latest/userguide/pod-identities.html
 [iam-database-authentication-for-mariadb-mysql-and-postgresql]: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html
+[iam-policy-for-db-access]: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.IAMPolicy.html
 [iam-roles-for-service-accounts]: https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html
+[associate-sa-role]: https://docs.aws.amazon.com/eks/latest/userguide/associate-service-account-role.html
+[pod-id-association]: https://docs.aws.amazon.com/eks/latest/userguide/pod-id-association.html
+[iam-db-accounts]: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.DBAccounts.html
 [install]: /hub/howtos/install
 [overview]: /hub/howtos/databases/overview
 [vpc-security-groups-for-rds]: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Overview.RDSSecurityGroups.html
