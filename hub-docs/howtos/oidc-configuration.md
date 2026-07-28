@@ -25,12 +25,12 @@ following criteria works with Hub:
   `email_verified` claim. Hub uses the email as the canonical username and
   rejects logins where `email_verified` isn't `true`.
 - **Group claim.** The ID token must include a claim that lists the user's group
-  memberships. The claim name is configurable on the IdentityProvider resource.
-  The default is `groups`. Group values are what you bind to Hub roles to grant
-  privileges within the system.
+  memberships. The claim name is configurable through `groupsClaim`. The default
+  is `groups`. Group values are what you bind to Hub roles to grant privileges
+  within the system.
 - **Redirect URI.** The provider must accept Hub's callback URL as a registered
   redirect URI. The callback is always `<externalURL>/oidc/callback`, where
-  `<externalURL>` is the public base URL of `hub-core` (set via
+  `<externalURL>` is the public base URL of `hub-core` (set through
   `hub-core.api.externalURL`).
 <!-- vale Google.WordList = YES -->
 
@@ -41,9 +41,44 @@ Hub-side deviation. (Entra ID emits `groups` only when explicitly configured;
 Google Workspace doesn't emit groups in the ID token at all.)
 :::
 
+## Choosing how to configure the provider
+
+`sampleEmailBasedOIDCConfig` is a convenience layer over the `IdentityProvider`
+resource. It generates a single provider, uses email as the username, and reads
+groups from one claim. Most deployments need nothing else, and the rest of this
+page assumes it.
+
+Write the `IdentityProvider` yourself when you need any of:
+
+- **More than one provider.** The sample block generates a single one.
+- **A username that isn't the email claim**, or a CEL expression that builds it.
+- **Directory search.** `spec.directory` backs the groups and users APIs, so
+  administrators can search the provider's directory instead of typing each
+  group name verbatim. The sample block omits it.
+- **Validation beyond `email_verified` and `allowedDomain`**, through
+  `claimValidationRules` or `userValidationRules`.
+- **Issuer plumbing.** A private CA bundle, an in-cluster `backendIssuerURL`,
+  inline JWKS, or more than one audience.
+
+Supply your own provider in one of two ways:
+
+- **`hub-core.bootstrap.files`.** Declarative, and travels with the Helm
+  release. Hub applies the bootstrap directory at startup and again every five
+  minutes, so these files stay the source of truth: each pass reverts changes
+  anyone makes to the same resource through the API. Name your file
+  `oidc-idp.yaml` to replace the generated one, or use any other name to add a
+  provider alongside it.
+- **The `identityproviders` endpoints.** Change providers at runtime without a
+  redeploy. Use this only for providers that no bootstrap file defines, since
+  the next pass over the bootstrap directory overwrites those.
+
+One field to decide up front either way: `userInfoPrefix` is immutable. Changing
+it later means deleting and recreating the provider, which orphans every role
+binding that references the old prefix.
+
 ## Setup order
 
-Configure OIDC in four stages, in this order. Skipping ahead leaves you
+Configure OIDC in three stages, in this order. Skipping ahead leaves you
 debugging across systems that can't yet see each other.
 
 ### 1. Provider-side
@@ -56,7 +91,7 @@ Done in your OIDC provider's console or API, before touching Hub.
   you control. Note the claim name.
 - Register Hub as a client application. Record the client ID and client secret.
 - Configure the redirect URI as `<externalURL>/oidc/callback`. You must know the
-  public hostname of `hub-core` before this step.
+  public hostname of `hub-api` before this step.
 - Look up the well-known discovery URL (the issuer URL) for the provider. This
   is the value you give to Hub.
 
@@ -72,12 +107,15 @@ Done in your Helm values, after you configure the provider.
     names (such as `entra`, `google`, `cognito`). Defaults to `oidc`.
   - `issuerURL`. The issuer URL from stage 1.
   - `clientID`. The client ID from stage 1.
-  - `clientSecret`. The client secret from stage 1. Provided via Helm values,
-    this value is written into the bootstrap Secret. For production, supply the
-    secret through your secret management workflow rather than committing it to
-    values.
+  - `clientSecret`. The client secret from stage 1. Provided through Helm
+    values, this value is written into the bootstrap Secret. For production,
+    supply the secret through your secret management workflow rather than
+    committing it to values.
   - `allowedDomain`. Optional. If set, Hub rejects logins whose email doesn't
     end in `@<allowedDomain>`.
+  - `groupsClaim`. The claim name from stage 1 that carries group membership.
+    Defaults to `groups`. Set it to `""` to skip group mapping entirely, which
+    leaves only per-user role bindings working.
 - Run `helm install` or `helm upgrade`. Hub generates an `IdentityProvider`
   resource named after `providerName` and applies it on startup.
 - Create an `OrganizationRoleBinding` that binds your administrator group
@@ -127,18 +165,15 @@ See the [Amazon Cognito Developer Guide][amazon-cognito-developer-guide]
 for user pool and app client setup.
 <!-- vale write-good.Passive = NO -->
 - `issuerURL`: `https://cognito-idp.<region>.amazonaws.com/<user-pool-id>`.
-- Groups: membership is published under `cognito:groups`, not
-  `groups`. The generated `IdentityProvider` maps only the username claim, so
-  supply a customised provider via `hub-core.bootstrap.files` that overrides the
-  group claim:
+- Groups: membership is published under `cognito:groups`, not `groups`. Point
+  `groupsClaim` at it:
 <!-- vale write-good.Passive = YES -->
 
   ```yaml
-  claimMappings:
-    username:
-      claim: email
-    groups:
-      claim: "cognito:groups"
+  hub-core:
+    api:
+      sampleEmailBasedOIDCConfig:
+        groupsClaim: "cognito:groups"
   ```
 
   With `providerName: cognito`, a Cognito group `admin` becomes the Hub subject
@@ -173,9 +208,8 @@ OAuth client setup.
   Choose one of:
   - **Bind to users.** Skip groups and bind roles to individual users by email
     (`<providerName>:alice@example.com`).
-  - **Custom claim.** Inject a `groups` claim upstream (Cloud Identity custom
-    attribute or an identity broker), then map it under
-    `validation.claimMappings`.
+  - **Custom claim.** Inject a groups claim upstream (Cloud Identity custom
+    attribute or an identity broker), then point `groupsClaim` at it.
 
 ## Next step
 
