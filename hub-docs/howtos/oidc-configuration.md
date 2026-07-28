@@ -70,7 +70,9 @@ Supply your own provider in one of two ways:
   provider alongside it.
 - **The `identityproviders` endpoints.** Change providers at runtime without a
   redeploy. Use this only for providers that no bootstrap file defines, since
-  the next pass over the bootstrap directory overwrites those.
+  the next pass over the bootstrap directory overwrites those. See
+  [Replacing the browser-login provider](#replacing-the-browser-login-provider)
+  for the lockout risk this path carries.
 
 One field to decide up front either way: `userInfoPrefix` is immutable. Changing
 it later means deleting and recreating the provider, which orphans every role
@@ -210,6 +212,54 @@ OAuth client setup.
     (`<providerName>:alice@example.com`).
   - **Custom claim.** Inject a groups claim upstream (Cloud Identity custom
     attribute or an identity broker), then point `groupsClaim` at it.
+
+## Replacing the browser-login provider
+
+A single provider drives the browser redirect login at any time. A unique index
+in the database enforces it: Hub rejects `spec.redirect.browserLogin` on a
+second provider while the first holds it, and refuses to delete the provider
+that holds it.
+
+:::note
+Moving browser login from one provider to another in a single step is a roadmap
+item for a future release. Until then, follow the sequence below.
+:::
+
+Two details make this more than a flag swap:
+
+- `userInfoPrefix` is immutable and prefixes every username and group value, so
+  role bindings written against the old provider (`old:admins`) don't match the
+  new one (`new:admins`).
+- No provider drives browser login between clearing the flag and setting it, so
+  new sign-ins fail for that window. Sessions already issued keep working until
+  you delete the old provider.
+
+To migrate:
+
+1. Create the new provider with `browserLogin` unset. Choose a `providerName`
+   where neither prefix starts with the other. `okta` and `entra` coexist;
+   `oidc` and `oidc2` collide.
+2. Duplicate your role bindings under the new prefix. An
+   `OrganizationRoleBinding` on `old:admins` needs a counterpart on
+   `new:admins`. Leave the old bindings alone for now.
+3. Clear `browserLogin` on the old provider.
+4. Set `browserLogin` on the new provider. Browser login works again here.
+5. Sign in through the new provider and confirm your group memberships resolve.
+6. Delete the old provider, then the role bindings that referenced its prefix.
+
+:::warning
+Apply step 3 and step 4 as separate changes, in that order. Hub walks the
+bootstrap directory in filename order and stops at the first error, so a single
+upgrade carrying both edits can reach the new provider first and reject it while
+the old one still holds the flag.
+:::
+
+A provider that exists only in the database has no safety net. Changing its
+`issuerURL` locks out everyone it authenticates, and nothing restores the old
+value. Role bindings survive by name, so recreating the provider with the same
+`userInfoPrefix` restores access, but that takes a working login. Define
+anything you depend on for administrator access in `bootstrap.files`, where the
+five-minute reconcile repairs it.
 
 ## Next step
 
