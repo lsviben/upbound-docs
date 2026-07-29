@@ -10,7 +10,7 @@ features and disabled by default until you opt in. See the Catalog overview
 for what Catalog does.
 
 For more information on configuring external registries,
-see [External registries.](external-registry.md)
+see [Registry.](../registry/overview.md)
 
 | Gate | Turns on |
 | --- | --- |
@@ -22,7 +22,9 @@ see [External registries.](external-registry.md)
 Before you enable Catalog, ensure:
 <!-- vale write-good.Passive = NO -->
 - A running Hub installation. See [Install Hub](../../howtos/install.md).
-- Helm access to the Hub release, so you can run `helm upgrade`.
+- Helm access to the Hub release, so you can run `helm upgrade`. See [the
+  chart reference](../../howtos/install.md#the-chart-reference) for what
+  `<chart-ref>` stands for.
 - The feature flag server is enabled. It's on by default. See [Feature
   flags](../../reference/feature-flags.md).
 - Network egress from the `hub-core` namespace to the registries
@@ -48,17 +50,26 @@ Before you enable Catalog, ensure:
 2. Apply the values with an upgrade.
 
    ```shell
-   helm upgrade hub oci://xpkg.upbound.io/upbound/hub \
+   helm upgrade hub <chart-ref> \
      --namespace hub \
      --values values.yaml
    ```
+
+   :::warning
+   `--values` replaces the release's user-supplied values instead of merging
+   with them. When you enable a gate on an existing release,
+   apply your complete values file, or add `--reuse-values` to keep the rest of
+   the release's configuration. Dropping the values that configure the database
+   leaves `hub-core` unable to connect, which surfaces as a failed
+   `hub-core-migrate` pre-upgrade hook rather than as a values error.
+   :::
 
    You can also flip the gate inline without a values file. Pass `--reuse-values` so the
    upgrade keeps the rest of your release's configuration and changes only this
    gate:
 
    ```shell
-   helm upgrade hub oci://xpkg.upbound.io/upbound/hub \
+   helm upgrade hub <chart-ref> \
      --namespace hub --reuse-values \
      --set hub-core.api.featureFlags.gates.Catalog=true
    ```
@@ -96,15 +107,16 @@ hub-core:
 Or set the `Registry` gate inline:
 
 ```shell
-helm upgrade hub oci://xpkg.upbound.io/upbound/hub \
+helm upgrade hub <chart-ref> \
   --namespace hub --reuse-values \
   --set hub-core.api.featureFlags.gates.Registry=true
 ```
 
 With the gate on, supply credentials as `Connection` resources in the
-`registry.hub.upbound.io` API group. See [External
-registries](external-registry.md) for the full setup, including credential
-scoping and verification.
+`registry.hub.upbound.io` API group. See [Registry](../registry/overview.md) for
+the full setup, including credential scoping and verification, and [Enable and
+configure Registry](../registry/configuration.md) for the gate's own values and
+verification steps.
 
 ## Verify
 
@@ -171,5 +183,5 @@ endpoint `/apis/catalog.hub.upbound.io/v1alpha1` should return the following:
 ## See also
 
 - [Catalog overview](overview.md)
-- [External registries](external-registry.md)
+- [Registry overview](../registry/overview.md)
 - [Feature flags](../../reference/feature-flags.md)

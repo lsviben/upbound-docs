@@ -91,6 +91,14 @@ and enrichment pipeline that populates it move together behind the one gate. See
 [Catalog](../features/catalog/overview.md) for what the feature does and [Enable
 and configure Catalog](../features/catalog/configuration.md) for the full setup.
 
+### Metrics
+
+The `Metrics` gate turns on the OTLP ingest endpoint and the query API together.
+It also needs the components that carry the pipeline: set
+`hub-core.otelGateway.enabled=true` and a backend, or `hub-core` refuses to
+start. See [Metrics](../features/metrics/overview.md) and [Enable and configure
+Metrics](../features/metrics/configuration.md).
+
 ### Registry
 
 The `Registry` gate supplies the credentials Catalog uses to pull from private

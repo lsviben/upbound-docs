@@ -256,3 +256,5 @@ exceptions:
   - ORB
   - RRB
   - SIG
+  - OTEL
+  - OTLP

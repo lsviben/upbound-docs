@@ -128,7 +128,7 @@ host, scope, authentication method, and any error information.
 
 <img src="/img/hub/catalog/connections.png" alt="Registry connection badge with hover details" style={{maxWidth: '500px', width: '100%'}} />
 
-To add or manage connections, see [External registries](external-registry.md).
+To add or manage connections, see [Registry](../registry/overview.md).
 
 ## Good to know
 
@@ -147,6 +147,6 @@ To add or manage connections, see [External registries](external-registry.md).
 
 - [Catalog overview](overview.md)
 - [Enable and configure Catalog](configuration.md)
-- [External registries](external-registry.md)
+- [Registry overview](../registry/overview.md)
 - [Feature flags](../../reference/feature-flags.md)
 - [Feature lifecycle](../../reference/feature-releases.md)

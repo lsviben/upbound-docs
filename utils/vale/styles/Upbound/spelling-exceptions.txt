@@ -237,3 +237,9 @@ queryable
 Artifactory
 passwordless
 deregister
+flagd
+JSONLogic
+allowlist
+allowlists
+allowlisted
+PromQL

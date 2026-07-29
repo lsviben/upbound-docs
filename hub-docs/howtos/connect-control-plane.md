@@ -37,11 +37,15 @@ get a connector registration token.
 <Tabs groupId="connect-ui">
 <TabItem value="console" label="Console">
 
-1. In the Console, open the control planes view for the realm you want.
-2. Select **Create control plane**.
-3. Enter a name for the control plane and confirm the realm.
-4. Submit. The Console creates the control plane and immediately shows its
-   registration token. Copy it now (see Step 2).
+1. In the Console, open the **Control Planes** view.
+2. Select **Register Control Plane**.
+3. Choose the realm that owns the control plane, and enter a name for it. The
+   name must be unique within that realm.
+
+   ![The Register a Control Plane dialog, with a realm selector and name field](/img/hub/connect-control-plane/register-dialog.png)
+
+4. Select **Register**. The Console registers the control plane and immediately
+   shows its registration token. Copy it now (see Step 2).
 
 </TabItem>
 <TabItem value="kubectl" label="kubectl">
@@ -84,7 +88,11 @@ which invalidates the existing token.
 <TabItem value="console" label="Console">
 
 Copy the registration token displayed after you created the control plane. The
-Console will not show it again. Set it as an environment variable for Step 3:
+Console will not show it again.
+
+![The Console showing the registration token and the next steps to deploy the connector](/img/hub/connect-control-plane/register-token.png)
+
+Set it as an environment variable for Step 3:
 
 ```bash
 REGISTRATION_TOKEN=<paste-registration-token>

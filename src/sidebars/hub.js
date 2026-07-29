@@ -6,6 +6,11 @@ module.exports = {
       label: 'Overview',
     },
     {
+      type: 'doc',
+      id: 'hub-quickstart',
+      label: 'Try the hub',
+    },
+    {
       type: 'category',
       label: 'Concepts',
       items: [
@@ -18,13 +23,57 @@ module.exports = {
       items: [
         {
           type: 'category',
+          label: 'Insights',
+          link: { type: 'doc', id: 'features/insights/overview' },
+          items: [
+            'features/insights/query',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Agent sessions',
+          link: { type: 'doc', id: 'features/agent-sessions/overview' },
+          customProps: { badge: 'Preview' },
+          items: [
+            'features/agent-sessions/configuration',
+            'features/agent-sessions/troubleshooting-session',
+          ],
+        },
+        {
+          type: 'category',
           label: 'Catalog',
           link: { type: 'doc', id: 'features/catalog/overview' },
           customProps: { badge: 'Preview' },
           items: [
             'features/catalog/configuration',
-            'features/catalog/external-registry',
             'features/catalog/console',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Metrics',
+          link: { type: 'doc', id: 'features/metrics/overview' },
+          customProps: { badge: 'Preview' },
+          items: [
+            'features/metrics/configuration',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Registry',
+          link: { type: 'doc', id: 'features/registry/overview' },
+          customProps: { badge: 'Preview' },
+          items: [
+            'features/registry/configuration',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Resource filtering',
+          link: { type: 'doc', id: 'features/resource-filtering/overview' },
+          customProps: { badge: 'Preview' },
+          items: [
+            'features/resource-filtering/filtering-resources',
           ],
         },
       ],
