@@ -27,6 +27,8 @@ module.exports = {
           link: { type: 'doc', id: 'features/insights/overview' },
           items: [
             'features/insights/query',
+            'features/insights/definitions',
+            'features/insights/packages',
           ],
         },
         {
