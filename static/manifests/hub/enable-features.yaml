@@ -8,7 +8,8 @@ hub-core:
         # Crossplane troubleshooting sessions. Needs the API key below.
         AgentSessions: true
         # Fleet-wide typedefinitions and crossplanepackages, which the
-        # Console's Definitions page reads.
+        # Console's Definitions and Packages pages read. Already the default;
+        # set it to false to hide both pages.
         AggregatedTypes: true
         # Metrics also needs a gateway and a backend. See the metrics
         # pipeline page.

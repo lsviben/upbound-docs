@@ -6,7 +6,7 @@ description: See every resource running across your connected control planes and
 
 import EnableFeature from '@site/src/components/EnableFeature';
 
-<EnableFeature gate="AggregatedTypes" anchor="aggregated-types">
+<EnableFeature gate="AggregatedTypes" anchor="aggregated-types" on>
   Only the fleet-wide type resources sit behind it; the rest of Insights is always on.
 </EnableFeature>
 
@@ -154,8 +154,8 @@ Insights backs four pages:
 |------|---------------|
 | `/dashboard` | The `resourcestats` summary for your estate. |
 | `/explore/resources` | The aggregated resource list, with search, filters, and lenses. |
-| `/explore/definitions` | The resource types your control planes serve. |
-| `/explore/packages` | The Crossplane packages installed across your control planes. |
+| `/explore/definitions` | The API types your control planes serve, correlated fleet-wide. See [Definitions](definitions.md). |
+| `/explore/packages` | The Crossplane packages your control planes declare, correlated fleet-wide. See [Packages](packages.md). |
 
 The dashboard reports the `resourcestats` summary alongside control plane and
 definition counts:
@@ -175,11 +175,13 @@ composes and the functions it depends on:
 
 ![A package detail drawer showing composed resources and function dependencies](/img/hub/insights/packages-relationships.png)
 
-Two of these depend on other features. `/explore/definitions` reads the
-fleet-wide `typedefinitions` API, which the alpha `AggregatedTypes` [feature
-flag][featureFlags] gates. That gate defaults to `false`, so the page stays empty
-on a default install until you enable it. When you enable [Catalog][catalog], the
-Catalog view replaces `/explore/packages`.
+Two of these read separate fleet-wide APIs. `/explore/definitions` and
+`/explore/packages` come from the `typedefinitions` and `crossplanepackages`
+resources that the alpha `AggregatedTypes` [feature flag][featureFlags] serves.
+That gate defaults to `true`, so both pages work on a default install.
+[Definitions](definitions.md) and [Packages](packages.md) cover what each view
+shows. Enabling [Catalog][catalog] adds a destination alongside
+`/explore/packages` rather than replacing it.
 
 ## Lenses
 
