@@ -4,15 +4,15 @@ sidebar_position: 4
 description: See which Crossplane packages your control planes declare, at which versions, and where.
 ---
 
-import EnableFeature from '@site/src/components/EnableFeature';
-
-<EnableFeature gate="AggregatedTypes" anchor="aggregated-types" on>
-  It also serves [Definitions](definitions.md).
-</EnableFeature>
-
 Packages is a fleet-wide list of the Crossplane packages your connected control
 planes have declared. Hub correlates each package by its OCI repository, so one
 row covers every control plane that declares it and every version they declare.
+
+:::note
+The `AggregatedTypes` gate serves this view and
+[Definitions](definitions.md). It defaults to on. See [Feature
+flags](../reference/feature-flags.md#aggregated-types) to turn it off.
+:::
 
 Hub identifies a row by package type and repository, such as the `provider`
 `xpkg.upbound.io/upbound/provider-aws`. A single row spans control planes and
@@ -135,8 +135,7 @@ you can inspect an API without installing the package.
 
 :::note
 Catalog is a preview feature and, unlike Packages, it's disabled by default. See
-[Enable optional features](../howtos/enable-features.md#catalog-and-registry)
-to turn it on.
+[Feature flags](../reference/feature-flags.md#catalog) to turn it on.
 :::
 
 Enabling Catalog doesn't replace Packages. Catalog appears as an extra

@@ -2,6 +2,7 @@
 title: Start a troubleshooting session
 sidebar_position: 3
 description: Create a session, ask about a failing resource, and read the streamed reply.
+draft: true
 ---
 
 This guide walks through one use case: a composite resource somewhere in the
@@ -10,7 +11,7 @@ knowing which control plane it's on.
 
 ## Before you start
 <!-- vale write-good.Passive = NO -->
-- [Enable agent sessions](../../howtos/enable-features.md#agent-sessions) and confirm the API group responds.
+- [Enable agent sessions](../../reference/feature-flags.md) and confirm the API group responds.
 - An account in an organization admin group. No other role is granted the
   session resources.
 <!-- vale write-good.Passive = YES -->
@@ -165,6 +166,5 @@ curl -sS -X DELETE \
 ## See also
 
 - [Agent sessions overview](overview.md)
-- [Enable optional features](../../howtos/enable-features.md#agent-sessions)
 - [Filtering resource lists](../resource-filtering/filtering-resources.md), which
   uses the same query surface the agent's `query_resources` tool calls.

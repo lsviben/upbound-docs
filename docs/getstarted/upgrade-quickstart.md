@@ -179,4 +179,4 @@ new control plane is healthy and reconciling.
 [upCli]: /manuals/cli/overview
 [console]: https://console.upbound.io
 [hub]: /hub/
-[migrate]: ./upgrading-to-upbound.md
+[migrate]: /manuals/uxp/howtos/upgrade-to-uxp

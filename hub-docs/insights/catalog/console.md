@@ -5,7 +5,7 @@ description: Find, filter, and inspect packages across your fleet from the Conso
 ---
 
 Once Catalog is
-[enabled](../../howtos/enable-features.md#catalog-and-registry), a **Catalog**
+[enabled](../../reference/feature-flags.md#catalog), a **Catalog**
 entry appears in the navigation menu under **Resource Exploration**, and in the
 quick access list on the home page.
 Open either one to see every Crossplane package image the hub has
@@ -143,12 +143,11 @@ To add or manage connections, see [Registry](../registry/overview.md).
 - **Data refreshes every 30 seconds.** Use the Refresh button for an immediate
   update.
 - **Catalog requires a feature flag.** The Console shows the Catalog page only
-  when the Catalog feature is [enabled](../../howtos/enable-features.md#catalog-and-registry).
+  when the Catalog feature is [enabled](../../reference/feature-flags.md#catalog).
 
 ## See also
 
 - [Catalog overview](overview.md)
-- [Enable optional features](../../howtos/enable-features.md#catalog-and-registry)
 - [Registry overview](../registry/overview.md)
 - [Feature flags](../../reference/feature-flags.md)
 - [Feature lifecycle](../../reference/feature-releases.md)

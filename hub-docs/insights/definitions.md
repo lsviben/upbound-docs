@@ -4,15 +4,15 @@ sidebar_position: 3
 description: See every API type your control planes serve, correlated across the fleet, and find where their schemas diverge.
 ---
 
-import EnableFeature from '@site/src/components/EnableFeature';
-
-<EnableFeature gate="AggregatedTypes" anchor="aggregated-types" on>
-  It also serves [Packages](packages.md).
-</EnableFeature>
-
 Definitions is a fleet-wide index of the API types your connected control
 planes serve. Hub correlates each type by API group and kind, so one row
 represents the same type wherever it appears.
+
+:::note
+The `AggregatedTypes` gate serves this view and [Packages](packages.md). It
+defaults to on. See [Feature
+flags](../reference/feature-flags.md#aggregated-types) to turn it off.
+:::
 
 Every type reaches Hub from one of three sources on a control plane: a
 `CustomResourceDefinition`, a Crossplane `CompositeResourceDefinition`, or a

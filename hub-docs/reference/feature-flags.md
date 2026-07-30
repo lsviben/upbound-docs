@@ -49,21 +49,20 @@ logs. Every gate in this release is alpha, and most default to `false`.
 <!-- vale Google.WordList = NO -->
 | Gate | Default | What it enables |
 |------|---------|-----------------|
-| `AgentSessions` | `false` | The `agent.hub.upbound.io/v1alpha1` API group, adding session and message endpoints under `/apis/agent.hub.upbound.io/v1alpha1/` for Crossplane troubleshooting. Requires an Anthropic API key (see below). |
 | `AggregatedTypes` | `true` | Fleet-wide `typedefinitions` and `crossplanepackages`, and their distribution subresources, under `hub.upbound.io/v1alpha1`. |
 | `Catalog` | `false` | The Catalog feature as a unit: the read API (`catalog.hub.upbound.io/v1alpha1`) covering Image list and get, usage, curated, OpenAPI subresources, and ImageSearch, plus the ingest and enrichment pipeline that populates it. |
 | `Metrics` | `false` | The metrics ingest endpoint and the `metrics.hub.upbound.io` API group. Requires `hub-core.otelGateway.enabled=true`. |
 | `Registry` | `false` | The `registry.hub.upbound.io` API group, providing the `Connection` resource (with its `verify` subresource) and the `Repository` resource. |
 
-### Agent sessions require an Anthropic API key
+<!-- ### Agent sessions require an Anthropic API key {#agent-sessions} -->
+<!-- | `AgentSessions` | `false` | The `agent.hub.upbound.io/v1alpha1` API group, adding session and message endpoints under `/apis/agent.hub.upbound.io/v1alpha1/` for Crossplane troubleshooting. Requires an Anthropic API key (see below). | -->
 
-The agent feature calls the Anthropic API and `hub-core` exits at startup when
-the gate is on and no key is set. The chart has no dedicated value for the key;
-`hub-core` reads `AGENT_SESSIONS_ANTHROPIC_API_KEY` from the environment, so
-`api.extraEnv` is how you supply it. See [Enable optional
-features](../howtos/enable-features.md#agent-sessions) for the Secret and the
-values, and [Agent sessions](../insights/agent-sessions/overview.md) for what the
-feature does.
+<!-- The agent feature calls the Anthropic API and `hub-core` exits at startup when -->
+<!-- the gate is on and no key is set. The chart has no dedicated value for the key; -->
+<!-- `hub-core` reads `AGENT_SESSIONS_ANTHROPIC_API_KEY` from the environment, so -->
+<!-- `api.extraEnv` is how you supply it. Point `api.extraEnv` at a Secret you create -->
+<!-- in the `hub-core` namespace, then run `helm upgrade`. See [Agent -->
+<!-- sessions](../insights/agent-sessions/overview.md) for what the feature does. -->
 
 ### Aggregated types
 
@@ -72,16 +71,13 @@ The `AggregatedTypes` gate serves the fleet-wide `typedefinitions` and
 defaults to `true` because the [Definitions](../insights/definitions.md)
 and [Packages](../insights/packages.md) views in the Console read those
 APIs. Setting it to `false` hides both views and drops both resources from
-`hub.upbound.io/v1alpha1` discovery. The rest of the group keeps working. See
-[Enable optional features](../howtos/enable-features.md#aggregated-types) for the
-values.
+`hub.upbound.io/v1alpha1` discovery. The rest of the group keeps working.
 
 ### Catalog
 
 The `Catalog` gate turns the feature on as a unit: the read API and the ingest
 and enrichment pipeline that populates it move together behind the one gate. See
-[Catalog](../insights/catalog/overview.md) for what the feature does and [Enable
-optional features](../howtos/enable-features.md#catalog-and-registry) for the full setup.
+[Catalog](../insights/catalog/overview.md) for what the feature does.
 
 ### Metrics
 
@@ -95,15 +91,13 @@ in the `hub-connector` chart. See [Metrics](../insights/metrics/overview.md) and
 ### Registry
 
 The `Registry` gate supplies the credentials Catalog uses to pull from private
-or self-hosted registries. See [Registry](../insights/registry/overview.md) and
-[Enable optional features](../howtos/enable-features.md#catalog-and-registry).
+or self-hosted registries. See [Registry](../insights/registry/overview.md).
 
 ## Enabling a feature gate
 
 Gates go in the same `values.yaml` you installed with, and a `helm upgrade`
-applies them. [Enable optional features](../howtos/enable-features.md) carries
-that procedure, the values each feature needs alongside its gate, and how to
-confirm from the startup logs which gates the running binary picked up.
+applies them. The `hub-core` startup logs report the resolved value of every
+gate, so check them to confirm which gates the running binary picked up.
 
 Disabling a beta feature works the same way in reverse. Set its gate to `false`
 to turn off a feature that defaults to on.

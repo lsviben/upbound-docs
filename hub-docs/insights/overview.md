@@ -4,12 +4,6 @@ sidebar_position: 1
 description: See every resource running across your connected control planes and query them through one Hub API.
 ---
 
-import EnableFeature from '@site/src/components/EnableFeature';
-
-<EnableFeature gate="AggregatedTypes" anchor="aggregated-types" on>
-  Only the fleet-wide type resources sit behind it; the rest of Insights is always on.
-</EnableFeature>
-
 Insights is the resource aggregation layer in Hub. Every connected control plane
 syncs its resources into `hub-core`, which serves them through a single API and
 the Console. You see and search your whole estate from one place instead of
@@ -17,6 +11,12 @@ opening a session on each control plane.
 
 Insights is new in Hub v3 and reached general availability, so no feature flag
 gates it. It's included with Hub at no extra cost in this release.
+
+:::note
+The `AggregatedTypes` gate covers only the fleet-wide type resources that back
+[Definitions](definitions.md) and [Packages](packages.md). It defaults to on.
+See [Feature flags](../reference/feature-flags.md#aggregated-types).
+:::
 
 ![The aggregated resource list in the Console, with the lens sidebar](/img/hub/insights/resources-all-with-lenses.png)
 
@@ -267,11 +267,11 @@ different counts. See [RBAC][rbac] for how realm permissions map to roles.
 - [Feature flags][featureFlags]
 - [Feature lifecycle][featureReleases]
 
-[architecture]: ../../concepts/architecture.md
-[catalog]: ../catalog/overview.md
-[connectCtp]: ../../howtos/connect-control-plane.md
-[connectSpace]: ../../howtos/connect-space.md
-[featureFlags]: ../../reference/feature-flags.md
-[featureReleases]: ../../reference/feature-releases.md
+[architecture]: ../concepts/architecture.md
+[catalog]: ./catalog/overview.md
+[connectCtp]: ../howtos/connect-control-plane.md
+[connectSpace]: ../howtos/connect-space.md
+[featureFlags]: ../reference/feature-flags.md
+[featureReleases]: ../reference/feature-releases.md
 [query]: ./query.md
-[rbac]: ../../howtos/rbac.md
+[rbac]: ../howtos/rbac.md

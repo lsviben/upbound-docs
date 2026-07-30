@@ -4,12 +4,6 @@ sidebar_position: 1
 description: Connect Hub to private or public OCI registries so it can authenticate to them and index the packages your control planes install.
 ---
 
-import EnableFeature from '@site/src/components/EnableFeature';
-
-<EnableFeature gate="Registry" anchor="catalog-and-registry">
-  Catalog uses the credentials it holds, so enable Catalog alongside it.
-</EnableFeature>
-
 Registry connects Hub to your own OCI registries, such as private Artifactory
 instances, public registries, or air-gapped mirrors. Hub authenticates to them
 and indexes images you declare or observe on connected control planes.
@@ -21,7 +15,10 @@ resource.
 :::note
 Registry is an alpha feature. It's disabled by default, and its API may change
 in incompatible ways between releases. See the [feature
-lifecycle](../../reference/feature-releases.md).
+lifecycle](../../reference/feature-releases.md). Set the `Registry` gate in your
+Helm values to turn it on. Catalog uses the credentials it holds, so enable the
+`Catalog` gate alongside it. See [Feature
+flags](../../reference/feature-flags.md#registry).
 :::
 
 ## Concepts
@@ -75,7 +72,6 @@ the upstream registry into the catalog, is planned.
 
 ## See also
 
-- [Enable optional features](../../howtos/enable-features.md#catalog-and-registry)
 - [Catalog overview](../catalog/overview.md)
 - [Feature flags](../../reference/feature-flags.md)
 - [Feature lifecycle](../../reference/feature-releases.md)

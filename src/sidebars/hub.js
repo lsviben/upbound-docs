@@ -42,15 +42,15 @@ module.exports = {
             'insights/lenses/console',
           ],
         },
-        {
-          type: 'category',
-          label: 'Agent sessions',
-          link: { type: 'doc', id: 'insights/agent-sessions/overview' },
-          customProps: { badge: 'Preview' },
-          items: [
-            'insights/agent-sessions/troubleshooting-session',
-          ],
-        },
+        // {
+        //   type: 'category',
+        //   label: 'Agent sessions',
+        //   link: { type: 'doc', id: 'insights/agent-sessions/overview' },
+        //   customProps: { badge: 'Preview' },
+        //   items: [
+        //     'insights/agent-sessions/troubleshooting-session',
+        //   ],
+        // },
         {
           type: 'doc',
           id: 'insights/metrics/overview',
@@ -89,7 +89,6 @@ module.exports = {
           ],
         },
         'howtos/install',
-        'howtos/enable-features',
         'howtos/metrics',
       ],
     },
