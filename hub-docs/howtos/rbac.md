@@ -53,7 +53,7 @@ the control plane's own RBAC, or from both.
 | Control plane | None | Realm roles plus the control plane's own RBAC | None |
 
 `OrganizationRoleBinding` and `RealmRoleBinding` live in the
-`authorization.hub.upbound.io/v1alpha1` API group. They accept the same shape of
+`authorization.hub.upbound.io/v1beta1` API group. They accept the same shape of
 `subjects` list. Each subject has a `kind` of `User` or `Group` and a `name`
 matched against the identity Hub derives from the OIDC token.
 
@@ -63,32 +63,87 @@ When a user authenticates, Hub validates the OIDC token against the configured
 `IdentityProvider` and constructs the identity used for authorization from the
 token's claims.
 
-Two `IdentityProvider` settings govern the group identity Hub sees:
+Three `IdentityProvider` settings govern the identity Hub sees:
 
+- `spec.validation.claimMappings.username.claim` selects which claim becomes the
+  username. It defaults to `sub`, but `sub` is an opaque provider-side
+  identifier on most providers, so bind-by-user is only readable if you set this
+  to `email`. Every example on this page assumes `email`.
 - `spec.validation.claimMappings.groups.claim` selects which claim in the token
   carries the user's group membership. Most providers expose a `groups` claim
   once you configure the corresponding scope, app role, or group claim mapping
   on the provider side.
-- Hub adds`spec.validation.userInfoPrefix` to every value it reads from
+- Hub adds `spec.validation.userInfoPrefix` to every value it reads from
   the user and group claims. The prefix prevents collisions between providers
   and makes the source of an identity clear in audit logs and bindings.
+
+Each mapping takes either a `claim` or a CEL `expression`, never both. Use
+`expression` when a single claim isn't enough, such as building a username from
+two claims.
+
+A provider that maps email to the username and reads groups from `groups`:
+
+```yaml
+apiVersion: authentication.hub.upbound.io/v1beta1
+kind: IdentityProvider
+metadata:
+  name: corp
+spec:
+  redirect:
+    browserLogin: true
+    clientSecret: "<client-secret>"
+    scopes:
+    - openid
+    - email
+    - profile
+  validation:
+    userInfoPrefix: "corp:"
+    issuer:
+      url: https://login.example.com/
+      audiences:
+      - "<client-id>"
+    claimMappings:
+      username:
+        claim: email
+      groups:
+        claim: groups
+    claimValidationRules:
+    - expression: "claims.email_verified == true"
+      message: "email must be verified"
+```
+
+The `userInfoPrefix` is conventionally `<metadata.name>:`, which is what the
+Helm `sampleEmailBasedOIDCConfig` block generates. It's immutable once set.
 
 The effective group identity Hub uses is `<userInfoPrefix><raw-group-value>`. If
 `userInfoPrefix` is `corp:` and the OIDC token carries a `groups` claim of
 `["platform-admins", "developers"]`, Hub sees the user as a member of groups
-`corp:platform-admins` and `corp:developers`. Role bindings must use the
-prefixed form in their `subjects[].name` fields.
+`corp:platform-admins` and `corp:developers`. Usernames get the same treatment,
+so an `email` claim of `alice@example.com` becomes `corp:alice@example.com`.
+Role bindings must use the prefixed form in their `subjects[].name` fields.
 
-Inspect a real token before writing bindings. Log in to the Hub UI. From the
-browser's developer tools, copy the access token and decode it at a JWT
-inspector. Confirm:
+Check the identity Hub derived for you before writing bindings. Hub serves the
+`SelfSubjectReview` endpoint, so `kubectl auth whoami` reports it directly:
 
-- The claim configured under `claimMappings.groups.claim` is present.
-- It contains the values you expect for the signed-in user.
-- The `userInfoPrefix` matches what your `IdentityProvider` declares.
+```bash
+kubectl --context hub auth whoami
+```
 
-If the claim is missing or empty, the fix is on the OIDC provider side. See [the
-OIDC overview][oidc-configuration] for the provider-specific
+```
+ATTRIBUTE                                       VALUE
+Username                                        corp:alice@example.com
+Groups                                          [corp:platform-admins corp:developers system:authenticated]
+Extra: authentication.hub.upbound.io/email      [alice@example.com]
+```
+
+This shows the mapped and prefixed identity, which is what bindings match, not
+the raw claims. Copy the `Username` and `Groups` values straight into
+`subjects[].name`.
+
+If `Groups` holds only `system:authenticated`, Hub found no group membership.
+Either `claimMappings.groups` is unset on the `IdentityProvider`, or the claim
+it names is missing from the token. Fix the second case on the OIDC provider
+side. See [the OIDC overview][oidc-configuration] for the provider-specific
 group-claim setup.
 
 ## Configure organization-level access
@@ -102,7 +157,7 @@ Assuming `corp:` is the `userInfoPrefix` from your
 emits, save this as `org-admin-binding.yaml`:
 
 ```yaml
-apiVersion: authorization.hub.upbound.io/v1alpha1
+apiVersion: authorization.hub.upbound.io/v1beta1
 kind: OrganizationRoleBinding
 metadata:
   name: platform-admins
@@ -151,7 +206,7 @@ namespace name **must match** the realm name.
 Save this as `prod-east-viewer-binding.yaml`:
 
 ```yaml
-apiVersion: authorization.hub.upbound.io/v1alpha1
+apiVersion: authorization.hub.upbound.io/v1beta1
 kind: RealmRoleBinding
 metadata:
   name: viewers
@@ -215,12 +270,33 @@ plane's RBAC decides what Hub surfaces from inside it, and it's the only way to
 grant write access to those resources. A `realm-admin` already reads everything
 in the realm, so these steps only widen what they can change.
 
+This tier works if and only if the control plane authenticates the same
+identities Hub does. Point both at the same OIDC provider, so a token Hub
+accepts names the same user and groups inside the cluster. Without that, the
+subject names in the next step refer to a user the control plane has never heard
+of.
+
 To grant a user access to specific resources inside a control plane:
 
-1. Inside the control plane, create a `Role` or `ClusterRole` granting the
+1. Declare which Hub identity providers this control plane trusts, on the
+   `ControlPlane` resource in Hub:
+
+   ```yaml
+   spec:
+     identityProviders:
+     - name: corp
+       userMappingType: Exact
+   ```
+
+   `name` is the `metadata.name` of the Hub `IdentityProvider`. `Exact` maps the
+   Hub identity onto the control plane's RBAC subjects unchanged, prefix
+   included, and is currently the only supported mapping. Leaving
+   `identityProviders` empty trusts every provider with `Exact` mapping, which
+   is the default.
+2. Inside the control plane, create a `Role` or `ClusterRole` granting the
    Kubernetes-level permissions you want, such as `get`, `list`, `watch` on a
    particular Crossplane API group.
-2. Bind that role to the user or group with a `RoleBinding` or
+3. Bind that role to the user or group with a `RoleBinding` or
    `ClusterRoleBinding`. The subject `name` uses the same prefixed identity Hub
    derives from the OIDC token (such as `corp:platform-admins`).
 
@@ -231,12 +307,10 @@ it. A `realm-viewer` who also holds a `ClusterRoleBinding` granting write access
 inside one control plane gets read access across the realm and write access in
 that one control plane.
 
-:::note
-A `ControlPlane` chooses which identity providers it trusts through
-`spec.identityProviders`. Hub maps a caller onto this control plane's RBAC
-subjects only for a provider in that list. Leaving the field empty trusts every
-provider, which is the default. If you set it, include the provider that issues
-the identities you bind here, or the bindings never match.
+:::warning
+A control plane that lists `identityProviders` without the provider that issued
+your identity can't see you at all, and its bindings never match. Visibility
+then comes from your realm role alone.
 :::
 
 Refer to your control plane's documentation for the RBAC primitives it exposes.
