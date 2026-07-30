@@ -11,7 +11,7 @@ knowing which control plane it's on.
 
 ## Before you start
 <!-- vale write-good.Passive = NO -->
-- [Enable agent sessions](../../reference/feature-flags.md) and confirm the API group responds.
+- [Enable agent sessions](../../../reference/feature-flags.md) and confirm the API group responds.
 - An account in an organization admin group. No other role is granted the
   session resources.
 <!-- vale write-good.Passive = YES -->
@@ -43,7 +43,7 @@ Hub, given by your provider. Hub tokens are short-lived, so
 repeat the exchange when calls start returning `401`.
 
 `scope` names the organization. A self-hosted Hub is a single organization named
-`default`. See [Access and authorization](../../howtos/rbac.md).
+`default`. See [Access and authorization](../../../howtos/rbac.md).
 
 ## Step 1: Create a session
 
@@ -166,5 +166,5 @@ curl -sS -X DELETE \
 ## See also
 
 - [Agent sessions overview](overview.md)
-- [Filtering resource lists](../resource-filtering/filtering-resources.md), which
+- [Filtering resource lists](../resource-exploration/filtering-resources.md), which
   uses the same query surface the agent's `query_resources` tool calls.

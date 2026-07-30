@@ -17,7 +17,7 @@ conditions.ready.status == "False" && createdAt > now() - duration("24h")
 :::note
 Resource filter expressions is an alpha feature. Its grammar and available
 fields may change in incompatible ways between releases. See the [feature
-lifecycle](../../reference/feature-releases.md).
+lifecycle](../../../reference/feature-releases.md).
 :::
 
 ## Where you can use it
@@ -108,5 +108,5 @@ There's no cap on overall expression length.
 ## See also
 
 - [Filtering resource lists](filtering-resources.md)
-- [Feature flags](../../reference/feature-flags.md)
-- [Feature lifecycle](../../reference/feature-releases.md)
+- [Feature flags](../../../reference/feature-flags.md)
+- [Feature lifecycle](../../../reference/feature-releases.md)

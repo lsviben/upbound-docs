@@ -11,7 +11,7 @@ represents the same type wherever it appears.
 :::note
 The `AggregatedTypes` gate serves this view and [Packages](packages.md). It
 defaults to on. See [Feature
-flags](../reference/feature-flags.md#aggregated-types) to turn it off.
+flags](../../reference/feature-flags.md#aggregated-types) to turn it off.
 :::
 
 Every type reaches Hub from one of three sources on a control plane: a
@@ -164,5 +164,5 @@ The Console reads two resources in the `hub.upbound.io/v1alpha1` API group:
 
 **Reference**
 
-- [Feature flags](../reference/feature-flags.md)
-- [Feature lifecycle](../reference/feature-releases.md)
+- [Feature flags](../../reference/feature-flags.md)
+- [Feature lifecycle](../../reference/feature-releases.md)

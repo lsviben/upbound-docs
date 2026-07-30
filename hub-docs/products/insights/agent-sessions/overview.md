@@ -14,10 +14,10 @@ already indexes.
 :::note
 Agent sessions is an alpha feature. It's disabled by default, and its API may
 change in incompatible ways between releases. See the [feature
-lifecycle](../../reference/feature-releases.md). Set the `AgentSessions` gate in
+lifecycle](../../../reference/feature-releases.md). Set the `AgentSessions` gate in
 your Helm values to turn it on. It also needs an Anthropic API key, or
 `hub-core` refuses to start. See [Feature
-flags](../../reference/feature-flags.md).
+flags](../../../reference/feature-flags.md).
 :::
 
 ## Concepts
@@ -43,7 +43,7 @@ The agent answers using two read-only tools against Hub's indexed fleet state:
 Both read what the connectors report, so the agent can't see a resource a
 connector doesn't sync and can't reach a control plane directly. Neither tool
 writes. See [Connect a control
-plane](../../howtos/connect-control-plane.md) for what the connector syncs by
+plane](../../../howtos/connect-control-plane.md) for what the connector syncs by
 default.
 
 ## Access
@@ -64,7 +64,7 @@ Access to the feature is the control mechanism today. Organization admins have
 no access to the feature.
 
 Don't enable this feature if that grant is wider than the fleet visibility you
-intend. See [Access and authorization](../../howtos/rbac.md).
+intend. See [Access and authorization](../../../howtos/rbac.md).
 :::
 
 <!-- vale Google.Headings = NO -->
@@ -96,5 +96,5 @@ its own timeout.
 ## See also
 
 - [Start a troubleshooting session](troubleshooting-session.md)
-- [Feature flags](../../reference/feature-flags.md)
-- [Feature lifecycle](../../reference/feature-releases.md)
+- [Feature flags](../../../reference/feature-flags.md)
+- [Feature lifecycle](../../../reference/feature-releases.md)

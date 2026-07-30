@@ -22,10 +22,10 @@ resource.
 :::note
 Metrics is an alpha feature. It's disabled by default, and its API may
 change in incompatible ways between releases. See the [feature
-lifecycle](../../reference/feature-releases.md). Set the `Metrics` gate in your
+lifecycle](../../../reference/feature-releases.md). Set the `Metrics` gate in your
 Helm values to turn it on. It also needs an OTel gateway and a
 Prometheus-compatible backend. See [Feature
-flags](../../reference/feature-flags.md#metrics).
+flags](../../../reference/feature-flags.md#metrics).
 :::
 
 ## The pipeline
@@ -47,7 +47,7 @@ push metrics Hub didn't ask for.
 
 The backend is Prometheus-compatible and swappable: self-hosted Prometheus or
 any remote-write endpoint, Google Managed Prometheus, or Amazon Managed
-Prometheus. See [Metrics pipeline](../../howtos/metrics.md) for backend setup.
+Prometheus. See [Metrics pipeline](../../../howtos/metrics.md) for backend setup.
 
 ## What the pipeline collects
 
@@ -70,7 +70,7 @@ The default allowlist covers both:
 The list is a Helm value on both the collector and the gateway, so you can add
 metrics your providers expose. Both sides must allow a metric for it to reach
 storage. See [adding metrics to the
-allowlist](../../howtos/metrics.md#add-metrics-to-the-allowlist).
+allowlist](../../../howtos/metrics.md#add-metrics-to-the-allowlist).
 
 Resource State Metrics emits one `kube_customresource_resource_condition` series
 per condition per resource, labeled with `group`, `version`, `kind`, `name`,
@@ -262,7 +262,7 @@ selector. A caller with no authorized control planes gets `403`.
 
 ## See also
 
-- [Metrics pipeline](../../howtos/metrics.md): enable the feature and choose a backend.
-- [Connect a control plane](../../howtos/connect-control-plane.md)
-- [Feature flags](../../reference/feature-flags.md)
-- [Feature lifecycle](../../reference/feature-releases.md)
+- [Metrics pipeline](../../../howtos/metrics.md): enable the feature and choose a backend.
+- [Connect a control plane](../../../howtos/connect-control-plane.md)
+- [Feature flags](../../../reference/feature-flags.md)
+- [Feature lifecycle](../../../reference/feature-releases.md)

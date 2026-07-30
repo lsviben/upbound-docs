@@ -4,8 +4,14 @@ sidebar_position: 2
 description: Install Hub with Helm against external Postgres and OIDC.
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 A self-hosted Hub install needs a PostgreSQL database, an OIDC provider, and
 ingress routes for the Hub services.
+
+This page owns the values used to install the `hub` Helm chart. The previous pages set up those dependencies and tell you which values to
+record.
 
 ## Prerequisites
 
@@ -16,25 +22,28 @@ confirm each item is ready. This page assumes you have:
   real CA-signed TLS certificate for the hostnames you intend to use
 - DNS records for the hostnames `api.<your-domain>` and `ui.<your-domain>`
   pointing at the cluster's load balancer or Gateway address
-- A reachable PostgreSQL database with credentials Hub can use. See [the
-  databases overview][overview] for version, extension, and
-  authentication-mode guidance
+- A provisioned PostgreSQL database, following [the databases
+  overview][overview] and the provider page it links to
 - An OIDC provider registered with Hub's callback URL
-  `https://api.<your-domain>/oidc/callback`, with a group claim configured. See
-  [the OIDC overview][oidc-configuration] for what Hub needs and how to set it up
-  per-provider
+  `https://api.<your-domain>/oidc/callback`, with a group claim configured,
+  following [the OIDC configuration page][oidc-configuration]
 
-You should also know:
+Those two pages each end with a table of values to record. Have both tables in
+front of you before you start. Between them they supply every placeholder in
+step 4:
 
-- **Your OIDC issuer URL, client ID, and client secret.** Hub validates the
-  issuer's discovery document at startup.
-- **Your Postgres connection details.** Host, port, database name, user, SSL
-  mode, and either a password or an IAM role for the `hub-core` ServiceAccount.
+| From the OIDC page | From the database page |
+| --- | --- |
+| `providerName` | Authentication mode (`password` or `iam`) |
+| `issuerURL` | Database host and port |
+| `clientID` | Database name and user |
+| Client secret | `sslmode` |
+| `groupsClaim` (if your provider deviates) | Password secret name and key, or AWS region and role ARN |
+| Admin group or user names | |
 
 ## The chart reference
 
-Hub docs write the chart as `<chart-ref>`. Substitute the umbrella chart's OCI
-reference:
+Hub installs from an umbrella chart at this OCI reference:
 
 ```bash
 oci://xpkg.upbound.io/upbound/hub
@@ -44,13 +53,6 @@ Helm resolves the latest release when you don't pass `--version`. Add
 `--version <version>` to pin a release, which is what you want in a production
 pipeline so an upgrade is a deliberate change rather than a side effect of
 running the command again.
-
-:::note
-Helm skips prerelease versions when it resolves a chart. While Hub publishes
-only release candidates, `helm install` and `helm upgrade` fail with
-`Could not locate a version matching provided version string` unless you pass an
-explicit `--version`, such as `--version 1.0.0-rc.2`.
-:::
 
 ## Install
 
@@ -65,8 +67,8 @@ own namespace name if you prefer.
 
 ### 2. Create the Postgres credentials secret
 
-Skip this step if you are using AWS RDS with IAM authentication. Instead, follow
-the corresponding section on the database section for your specific provider.
+Skip this step if you chose IAM authentication on the database page. IAM mode
+stores no password, so it needs no Secret.
 
 For password authentication, create a Secret holding the database password under
 the key `password`:
@@ -81,8 +83,8 @@ You reference this Secret from `values.yaml` in step 4 via
 
 :::note
 Hub doesn't require the Secret name `hub-core-postgres`. Any Secret in the same
-namespace as the release works as long as the key holding the password matches
-the `key` field you set in values.
+namespace as the release works as long as the name and key match the
+`existingSecretRef` fields you set in values.
 :::
 
 ### 3. Create the OIDC client-secret secret
@@ -110,16 +112,15 @@ OIDC_CLIENT_SECRET=$(kubectl -n hub get secret hub-core-oidc \
 
 The `helm install` command in step 5 uses the `OIDC_CLIENT_SECRET` variable.
 
-### 4. Write `values.yaml`
+### 4. Assemble `values.yaml`
 
-Save the following as `values.yaml` and fill in the placeholders. The template
-includes only the keys you need to change for a self-hosted install. Defaults
-cover everything else.
+Save the following as `values.yaml`.
+It carries the ingress and OIDC settings, and you complete it with the Postgres
+block for the authentication mode you chose. The template includes only the keys
+you need to change for a self-hosted install. Defaults cover everything else.
 
 ```yaml
 global:
-  # Apex domain Hub is served from. Subcharts compose
-  # <subdomain>.<domain> hostnames from this value.
   gateway:
     enabled: true
     # Set to true if you want this chart to render the Gateway
@@ -130,6 +131,8 @@ global:
     # cluster's controller has registered (for example "envoy",
     # "istio", "cilium").
     gatewayClassName: ""
+    # Apex domain Hub is served from. Subcharts compose
+    # <subdomain>.<domain> hostnames from this value.
     domain: <your-domain>
     # parentRef points at an existing Gateway. Remove these values
     # below if you set create=true.
@@ -153,21 +156,37 @@ hub-core:
   api:
     # Externally reachable base URL for hub-core. Used to compose
     # the OIDC callback URI (<externalURL>/oidc/callback) and
-    # surfaced to hub-webui for browser redirects.
+    # surfaced to hub-webui for browser redirects. Must match the
+    # redirect URI registered with your provider.
     externalURL: https://api.<your-domain>
 
-    # OIDC identity provider. issuerURL and clientID must be set
-    # for hub-core to bootstrap an IdentityProvider at startup.
+    # Values recorded on the OIDC configuration page.
     sampleEmailBasedOIDCConfig:
       providerName: oidc
       issuerURL: <your-oidc-issuer-url>
       clientID: <your-oidc-client-id>
       # Client secret is injected on the helm install command line
-      # via --set, not committed here.
+      # via --set in step 5, not committed here.
       clientSecret: ""
       # Optional. Restrict logins to a single email domain.
       allowedDomain: <your-email-domain>
 
+  # First administrators. Without at least one entry here, the first
+  # user to log in has no permissions and no way to grant any.
+  bootstrap:
+    admins:
+      - kind: Group
+        name: "oidc:<your-admin-group-name>"
+```
+
+Now append the Postgres block for your authentication mode. Both forms nest
+under the same `hub-core:` key as the block above.
+
+<Tabs>
+<TabItem value="password" label="Password authentication" default>
+
+```yaml
+hub-core:
   postgresql:
     # Either set connectionString OR host + database + user + auth.
     # Leave connectionString empty to use the structured form below.
@@ -179,8 +198,6 @@ hub-core:
     # Set to require (or stricter) when your database enforces TLS.
     sslmode: require
     auth:
-      # password (default) or iam. Use iam with cloud=aws on RDS;
-      # see databases/aws-rds.md.
       mode: password
       password:
         # Reference to the Secret created in step 2.
@@ -188,6 +205,39 @@ hub-core:
           name: hub-core-postgres
           key: password
 ```
+
+</TabItem>
+<TabItem value="iam" label="AWS IAM authentication">
+
+```yaml
+hub-core:
+  api:
+    serviceAccount:
+      create: true
+      # IRSA only. Omit this annotation when using EKS Pod Identity.
+      annotations:
+        eks.amazonaws.com/role-arn: arn:aws:iam::<account-id>:role/hub-core
+
+  postgresql:
+    host: <your-rds-endpoint>
+    port: 5432
+    database: hub
+    user: hub
+    sslmode: require
+    auth:
+      mode: iam
+      cloud: aws
+      aws:
+        region: <your-aws-region>
+```
+
+IAM mode needs no password Secret, so step 2 doesn't apply. The chart forces
+`sslmode=require` in this mode and ignores `connectionString`. See [AWS
+RDS][aws-rds] for the IAM role, policy, and database-role setup these values
+depend on.
+
+</TabItem>
+</Tabs>
 
 Notes on the template:
 
@@ -197,8 +247,11 @@ Notes on the template:
   Gateway, set `create: true` and supply `gatewayClassName`.
 - `hub-core.api.externalURL` must match the hostname clients (browsers and CLI
   tools) use to reach `hub-core`.
-- `hub-core.postgresql.connectionString` takes precedence over the structured
-  `host`/`port`/`database`/`user`/`sslmode` keys.
+- `hub-core.bootstrap.admins` accepts `Group` and `User` entries. Group names
+  come from your provider's group claim and user names are the user's email,
+  both prefixed with `<providerName>:`. From this one list the chart renders an
+  `OrganizationRoleBinding` bound to `org-admin` and a `RealmRoleBinding` bound
+  to `realm-admin` on the `default` realm.
 
 :::note
 The chart exposes many more values than the ones shown here. See the values
@@ -211,7 +264,7 @@ reference for the full surface. Anything not set in
 Install the chart with `values.yaml` and the OIDC client secret passed inline:
 
 ```bash
-helm install hub <chart-ref> \
+helm install hub oci://xpkg.upbound.io/upbound/hub \
   --namespace hub \
   --values values.yaml \
   --set hub-core.api.sampleEmailBasedOIDCConfig.clientSecret="$OIDC_CLIENT_SECRET"
@@ -246,16 +299,32 @@ Deployment, but `hub-core` itself doesn't use it. It activates only when you ins
 Open `https://ui.<your-domain>` in a browser. The browser should redirect to your
 OIDC provider for login, then returned to the Hub UI.
 
-If that flow succeeds, you arrive at the Hub home page but have no access
-to resources. A fresh install has no registered control planes or role
-bindings by default. The next section adds those.
+### Confirm admin access
+
+Signing in as a member of the group you listed in `hub-core.bootstrap.admins`
+gives you organization and realm admin rights immediately. The chart rendered
+both bindings during install.
+
+<!-- vale Google.Quotes = NO -->
+If login completes but the UI shows "no permissions", confirm:
+<!-- vale Google.Quotes = YES -->
+
+1. The group in your OIDC token matches an entry in
+   `hub-core.bootstrap.admins`, including the `<providerName>:` prefix.
+2. Your OIDC provider is sending the group claim. Inspect the JWT at the
+   provider's debug endpoint or in your browser's network tab.
+
+To grant access beyond these first administrators, see [RBAC and OIDC group
+mapping][rbac].
+
+A fresh install has no registered control planes. The next section adds one.
 
 ## Configure
 
-The bootstrap steps below register your first ControlPlane and grant your OIDC
-admin group organization-wide admin rights.
+With admin access confirmed, register your first ControlPlane and mint a
+registration token for its connector.
 
-### Bootstrap the first control plane
+### Register the first control plane
 
 Apply a ControlPlane resource for the cluster (or clusters) you register a
 `hub-connector` against. The example below registers a `production` ControlPlane
@@ -314,61 +383,15 @@ connector's `connector.hub.url` pointing at your gateway instead of a
 Docker-network address.
 <!-- vale write-good.Passive = YES -->
 
-<!-- vale Google.Headings = NO -->
-### Bootstrap the admin OrganizationRoleBinding
-<!-- vale Google.Headings = YES -->
-
-Grant your OIDC admin group organization-wide admin rights. The `name` on the
-`Group` subject must match the value Hub sees in the OIDC token's group claim,
-prefixed with `<providerName>:`. With `providerName: oidc` and an OIDC group
-named `hub-admins`, the subject name is `oidc:hub-admins`.
-
-Save as `bootstrap-org-admin.yaml`:
-
-```yaml
-apiVersion: authorization.hub.upbound.io/v1alpha1
-kind: OrganizationRoleBinding
-metadata:
-  name: org-admin
-roleRef:
-  name: org-admin
-subjects:
-  - kind: Group
-    name: oidc:<your-admin-group-name>
-```
-
-Apply it:
-
-```bash
-kubectl apply -f bootstrap-org-admin.yaml
-```
-
 :::note
-The chart also accepts `hub-core.bootstrap.files` for delivering ControlPlanes,
-IdentityProviders, and OrganizationRoleBindings as part of the Helm release.
-Applying them post-install with `kubectl` (as above) keeps role bindings out of
-the chart values and makes them easier to change without a Helm upgrade.
+The chart also accepts `hub-core.bootstrap.files` for delivering ControlPlanes
+and other Hub objects as part of the Helm release. Use it when you want the
+control plane inventory version-controlled alongside the release rather than
+applied by hand.
 :::
 
-### Confirm admin access
-
-Refresh `https://ui.<your-domain>` in the browser you logged in with above. The
-role binding takes effect immediately:
-
-- A member of the admin group bound above sees the `production` ControlPlane in
-  the ControlPlane list (with no resources yet, since it has no connector
-  attached) and has full admin actions available.
-- A member of any other group sees the ControlPlane list but has no actions
-  available until you apply additional role bindings.
-
-<!-- vale Google.Quotes = NO -->
-If login completes but the UI shows "no permissions", confirm:
-<!-- vale Google.Quotes = YES -->
-
-1. The group in your OIDC token matches the subject `name` in
-   `bootstrap-org-admin.yaml` (including the `<providerName>:` prefix).
-2. Your OIDC provider is sending the group claim. Inspect the JWT at the
-   provider's debug endpoint or in your browser's network tab.
+Refresh `https://ui.<your-domain>`. The `production` ControlPlane appears in the
+ControlPlane list, with no resources yet since it has no connector attached.
 
 ## Next step
 
@@ -381,7 +404,9 @@ observed cluster with the registration token you minted above. For self-hosted i
 `connector.hub.tokenExchangeUrl` point at the public hostname of your gateway
 instead, and `connector.hub.allowInsecure` stays at its default of `false`.
 
+[aws-rds]: /hub/howtos/databases/aws-rds
 [oidc-configuration]: /hub/howtos/oidc-configuration
 [overview]: /hub/howtos/databases/overview
 [prerequisites]: /hub/howtos/prerequisites
 [production-overview]: /hub/howtos/production-overview
+[rbac]: /hub/howtos/rbac
