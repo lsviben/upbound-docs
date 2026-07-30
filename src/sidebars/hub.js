@@ -12,7 +12,7 @@ module.exports = {
     },
     {
       type: "category",
-      label: "Features",
+      label: "Insights",
       items: [
         {
           type: "category",
