@@ -45,9 +45,23 @@ Your database must have:
 :::note
 Hub holds a small connection pool per `hub-core` Pod. Plan for `replicas x
 pool_size` connections from the application tier, plus the migration job that
-runs on every `helm upgrade`. The pool size is conservative by default. The
-[sizing guide][sizing] covers tuning it.
+runs on every `helm upgrade`. The pool size is conservative by default.
 :::
+
+## Instance sizing
+
+Size the instance for connection count and burst CPU during ingest, not for data
+volume. Hub's per-resource footprint is small, so even large installations stay
+within a modest volume that fits in the instance's cache.
+
+Start at 20 to 50 GiB of SSD storage with autoscaling enabled. The [sizing
+guide][sizing] gives instance classes for AWS RDS, GCP Cloud SQL, and Azure
+Database for PostgreSQL, based on your total resource count.
+
+Enable `pg_stat_statements` and `auto_explain`, along with your provider's query
+insights feature, and keep them on in production. Hub's database load is dominated
+by the resource list query, and statement-level data is what makes a latency
+problem diagnosable.
 
 ## Authentication modes
 
