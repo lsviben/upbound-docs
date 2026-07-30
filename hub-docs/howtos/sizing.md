@@ -1,54 +1,39 @@
 ---
 title: Sizing
 sidebar_position: 11
-description: Pick replica counts, resources, and a Postgres tier for your workload.
+description: Pick replica counts, resources, and a Postgres tier by total resource count.
 ---
 
 This page helps you pick replica counts, resource requests, and a Postgres tier
-based on the workload your Hub installation handles.
+based on the total number of resources your Hub installation tracks.
 
 :::note
-Hub is a new product. The numbers below are starting points derived from the
-chart's defaults and reasoned estimates. They're not yet load-tested at scale.
-Treat them as a sensible place to begin, then watch the three workload metrics below
-and adjust. Workloads that exceed the `large` tier are beyond what's currently
-validated. Contact Upbound for guidance.
+Upbound tested this guidance on GKE at roughly 200,000 and 600,000 resources,
+against a single Cloud SQL `db-custom-8-32768` instance (8 vCPU, 32 GiB) running
+PostgreSQL 18. Neither test point showed memory pressure. Both used small resource
+objects, so larger `spec` and `status` bodies raise ingest cost and database size
+on top of the counts below. Above 600,000 resources, start at the `large` tier and
+contact Upbound.
 :::
 
-## Workload metrics that matter
-
-Three numbers drive every sizing decision for Hub. Measure or estimate yours
-before reading the tiers below.
-
-**Connectors connected.** One `hub-connector` runs in each observed control
-plane and pushes resource state to `hub-core`. The connector count is the upper
-bound on how many concurrent writers `hub-core` sees, and it grows linearly
-with the control planes you operate.
-
-**Resources tracked per connector.** Each connector watches Crossplane-managed
-resources in its host cluster and reports them to `hub-core`, which persists them
-in PostgreSQL. The total resource count across all connectors is the primary
-driver of database size, query latency, and connector memory. A small platform
-team running a handful of managed resources per cluster sits at one end. A fleet
-replicating thousands of provider resources per control plane sits at the other.
-
-<!-- vale write-good.Weasel = NO -->
-**Query RPS against `hub-core`.** Every Hub UI page load, every CLI call, and
-every external automation client that lists or watches resources lands as HTTP
-traffic on `hub-core`. Sustained read RPS (not peak) determines how many
-`hub-core` replicas you need and how much headroom Postgres needs for read
-queries. A small team browsing the UI generates a few requests per second. Broad
-automation or many concurrent UI users push it higher.
-<!-- vale write-good.Weasel = YES -->
-
-Plug your numbers into the tiers below.
-
 ## Sizing tiers
+
+One number picks your tier: the total resources Hub tracks. Each connector syncs
+the resources in its target control plane and reports them to `hub-core`, which
+persists them in PostgreSQL. Count across all connectors, then read the matching
+tier below.
 
 The tiers describe `hub-core` replica count, `hub-core` per-pod resource requests
 and limits, `hub-connector` per-pod resources, and a recommended Postgres tier.
 The chart includes empty `resources: {}` for `hub-core` and `hub-connector` by
 default. Set the values shown here explicitly via your `values.yaml`.
+
+Memory requests and limits are identical across all three tiers, which is
+deliberate: memory stays flat as the resource count grows for both components.
+What moves between tiers is the PostgreSQL instance class, along with the
+`hub-core` replica count and CPU request. `hub-core` holds no bulk state, so its
+replicas are about availability and absorbing concurrent queries rather than
+store size.
 
 ### Small
 
@@ -57,16 +42,16 @@ For evaluation installs, internal platform teams, and early production with a
 handful of clusters.
 <!-- vale write-good.Weasel = YES -->
 
-- **Workload envelope:** up to 5 connectors, up to 50,000 resources total, under
-  50 query RPS sustained.
+- **Total resources:** up to 50,000.
 - **`hub-core` replicas:** 2, for redundancy across nodes. See [high
   availability][high-availability].
 - **`hub-core` resources per pod:** requests `cpu: 250m`, `memory: 512Mi`. Limits
-  `memory: 1Gi`.
-- **`hub-connector` resources per pod:** requests `cpu: 100m`, `memory: 128Mi`.
-  Limits `memory: 256Mi`.
-- **Postgres:** one small managed instance. AWS RDS `db.t4g.medium` (2 vCPU, 4
-  GiB) with 50 GiB gp3 storage works well. No read replica needed.
+  `cpu: 1`, `memory: 1Gi`.
+- **`hub-connector` resources per pod:** requests `cpu: 100m`, `memory: 256Mi`.
+  Limits `cpu: 1`, `memory: 512Mi`.
+- **Postgres:** 2 vCPU and 8 GiB. See [PostgreSQL instance
+  classes](#postgresql-instance-classes) for the equivalent in each cloud. Start
+  at 20 GiB of SSD storage with autoscaling enabled. No read replica needed.
 
 ```yaml
 hub-core:
@@ -77,6 +62,7 @@ hub-core:
         cpu: 250m
         memory: 512Mi
       limits:
+        cpu: 1
         memory: 1Gi
 
 hub-connector:
@@ -84,25 +70,25 @@ hub-connector:
     resources:
       requests:
         cpu: 100m
-        memory: 128Mi
-      limits:
         memory: 256Mi
+      limits:
+        cpu: 1
+        memory: 512Mi
 ```
 
 ### Medium
 
 For production installs serving a platform organization with a moderate fleet.
 
-- **Workload envelope:** up to 25 connectors, up to 500,000 resources total, 50
-  to 250 query RPS sustained.
+- **Total resources:** up to 200,000.
 - **`hub-core` replicas:** 3.
-- **`hub-core` resources per pod:** requests `cpu: 500m`, `memory: 1Gi`. Limits
-  `memory: 2Gi`.
-- **`hub-connector` resources per pod:** requests `cpu: 200m`, `memory: 256Mi`.
-  Limits `memory: 512Mi`.
-- **Postgres:** one memory-optimised managed instance. AWS RDS `db.r6g.large` (2
-  vCPU, 16 GiB) with 200 GiB gp3 storage and IAM authentication fits this tier.
-  Enable storage autoscaling.
+- **`hub-core` resources per pod:** requests `cpu: 500m`, `memory: 512Mi`. Limits
+  `cpu: 1`, `memory: 1Gi`.
+- **`hub-connector` resources per pod:** requests `cpu: 100m`, `memory: 256Mi`.
+  Limits `cpu: 1`, `memory: 512Mi`.
+- **Postgres:** 2 to 4 vCPU and 16 GiB. See [PostgreSQL
+  instance classes](#postgresql-instance-classes). Start at 20 GiB of SSD storage
+  with autoscaling enabled.
 
 ```yaml
 hub-core:
@@ -111,17 +97,19 @@ hub-core:
     resources:
       requests:
         cpu: 500m
-        memory: 1Gi
+        memory: 512Mi
       limits:
-        memory: 2Gi
+        cpu: 1
+        memory: 1Gi
 
 hub-connector:
   connector:
     resources:
       requests:
-        cpu: 200m
+        cpu: 100m
         memory: 256Mi
       limits:
+        cpu: 1
         memory: 512Mi
 ```
 
@@ -129,20 +117,20 @@ hub-connector:
 
 For broad fleets and heavy automation traffic.
 
-- **Workload envelope:** up to 100 connectors, up to 2,500,000 resources total,
-  250 to 1,000 query RPS sustained.
+- **Total resources:** up to 600,000.
 - **`hub-core` replicas:** 5, with the [Horizontal Pod
   Autoscaler][autoscaling] enabled to absorb bursts.
-- **`hub-core` resources per pod:** requests `cpu: 1`, `memory: 2Gi`. Limits
-  `memory: 4Gi`.
-- **`hub-connector` resources per pod:** requests `cpu: 500m`, `memory: 512Mi`.
-  Limits `memory: 1Gi`. Consider scoping `connector.controlPlane.apiGroups` to
-  only the provider groups you care about. Every group adds informers that
-  consume connector memory.
-- **Postgres:** a larger memory-optimised instance. AWS RDS `db.r6g.xlarge` (4
-  vCPU, 32 GiB) with 500 GiB gp3 storage and IAM authentication fits this tier.
-  Add a read replica if you observe contention between connector writes and UI
-  reads.
+- **`hub-core` resources per pod:** requests `cpu: 1`, `memory: 512Mi`. Limits
+  `cpu: 2`, `memory: 1Gi`. Observed memory stayed well under the limit at this
+  scale, leaving headroom for query concurrency and garbage collection.
+- **`hub-connector` resources per pod:** requests `cpu: 100m`, `memory: 256Mi`.
+  Limits `cpu: 1`, `memory: 512Mi`. Consider narrowing
+  `connector.sync.limitToClusterRoles` to the resources you actually query. Each
+  synced type adds an informer that consumes connector memory.
+- **Postgres:** 8 vCPU and 32 GiB. See [PostgreSQL
+  instance classes](#postgresql-instance-classes). Start at 50 GiB of SSD storage
+  with autoscaling enabled. Add a read replica if you observe contention between
+  connector writes and UI reads.
 
 ```yaml
 hub-core:
@@ -151,9 +139,10 @@ hub-core:
     resources:
       requests:
         cpu: 1
-        memory: 2Gi
+        memory: 512Mi
       limits:
-        memory: 4Gi
+        cpu: 2
+        memory: 1Gi
     autoscaling:
       enabled: true
       minReplicas: 5
@@ -164,41 +153,58 @@ hub-connector:
   connector:
     resources:
       requests:
-        cpu: 500m
-        memory: 512Mi
+        cpu: 100m
+        memory: 256Mi
       limits:
-        memory: 1Gi
+        cpu: 1
+        memory: 512Mi
 ```
+
+## PostgreSQL instance classes
+
+Size the [managed PostgreSQL instance][databases] for connection count and burst
+CPU during ingest, not for data volume. Start from the row matching your resource
+count:
+
+| Total resources | vCPU and RAM | AWS RDS | GCP Cloud SQL | Azure Database for PostgreSQL |
+|-----------------|--------------|---------|---------------|-------------------------------|
+| Up to 50,000 | 2 vCPU, 8 GiB | `db.m6g.large` | `db-custom-2-8192` | `Standard_D2ds_v5` |
+| Up to 200,000 | 2 to 4 vCPU, 16 GiB | `db.m6g.xlarge` | `db-custom-4-16384` | `Standard_D4ds_v5` |
+| Up to 600,000 | 8 vCPU, 32 GiB | `db.m6g.2xlarge` | `db-custom-8-32768` | `Standard_D8ds_v5` |
+
+Use the General Purpose tier on Azure. Provider instance names change between
+generations, so confirm the current equivalent in your provider's console.
+
+:::warning
+Both test points ran on the single 8 vCPU, 32 GiB instance named above, so the two
+smaller rows are interpolations rather than tested configurations. Upbound also
+didn't profile how saturated that instance was, so a smaller class may well serve
+the same workload. Treat every row as a starting point rather than a requirement,
+and watch CPU, connection saturation, and cache hit ratio under your own load.
+:::
 
 ## Pick your tier
 
-Walk these three questions in order. The first envelope you exceed bumps you up
-a tier.
+Count the resources Hub tracks across every connector: under 50,000 → `small`,
+50,000 to 200,000 → `medium`, 200,000 to 600,000 → `large`. Above 600,000, start
+at `large` and contact Upbound, because that scale is beyond what Upbound tested.
 
-1. **How many control planes register with Hub?** 1 to 5 → consider
-   `small`. 6 to 25 → consider `medium`. 26 to 100 → consider `large`. More than
-   100 → start at `large` and contact Upbound. That scale is beyond what's
-   currently validated.
-2. **How many resources does the largest connector track?** Under 10,000 per
-   connector → the tier from question 1 stands. 10,000 to 50,000 per connector →
-   move up one tier. More than 50,000 per connector → move up two tiers and
-   scope `connector.controlPlane.apiGroups` so you only watch the provider
-   groups you actually use.
-3. **What sustained query RPS does `hub-core` see?** Under 50 → the tier so far
-   stands. 50 to 250 → at least `medium`. Above 250 → at least `large`, with the
-   Horizontal Pod Autoscaler enabled.
-
-The tier you settle on after all three questions is your starting point. Roll
-out to a non-production install first, watch CPU, memory, and PostgreSQL
-connection saturation under realistic load, and adjust before promoting to
-production.
+Whichever tier you land on is a starting point. If you expect many concurrent UI
+users or heavy automation traffic, add `hub-core` replicas or enable the
+[Horizontal Pod Autoscaler][autoscaling], neither of which changes the memory
+values. Roll out to a non-production install first, watch CPU, memory, and
+PostgreSQL connection saturation under realistic load, and adjust before promoting
+to production.
 
 ## Next step
 
+- [Provision your database][databases]. Review the PostgreSQL version, extension,
+  and authentication requirements for the instance class you picked.
 - [Run Hub with redundancy][high-availability]. Set replica counts, pod
   disruption budgets, and anti-affinity for the tier you picked.
 - [Configure autoscaling][autoscaling]. Enable the Horizontal Pod Autoscaler
   for `hub-core` and turn on storage autoscaling on your Postgres tier.
 
 [autoscaling]: /hub/howtos/autoscaling
+[databases]: /hub/howtos/databases/overview
 [high-availability]: /hub/howtos/high-availability
