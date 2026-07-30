@@ -44,17 +44,16 @@ no flag client and every gated feature is forced off regardless of the
 Set a gate with `hub-core.api.featureFlags.gates.<Gate>`; drop the leading
 `hub-core.` if you install the `hub-core` subchart on its own. The gate name is
 also the name that appears in `FEATURE_GATES` and in the `hub-core` startup
-logs. Every gate in this release is alpha, and all but one default to `false`.
+logs. Every gate in this release is alpha, and most default to `false`.
 
 <!-- vale Google.WordList = NO -->
 | Gate | Default | What it enables |
 |------|---------|-----------------|
 | `AgentSessions` | `false` | The `agent.hub.upbound.io/v1alpha1` API group, adding session and message endpoints under `/apis/agent.hub.upbound.io/v1alpha1/` for Crossplane troubleshooting. Requires an Anthropic API key (see below). |
-| `AggregatedTypes` | `false` | Fleet-wide `typedefinitions` and `crossplanepackages`, and their distribution subresources, under `hub.upbound.io/v1alpha1`. |
+| `AggregatedTypes` | `true` | Fleet-wide `typedefinitions` and `crossplanepackages`, and their distribution subresources, under `hub.upbound.io/v1alpha1`. |
 | `Catalog` | `false` | The Catalog feature as a unit: the read API (`catalog.hub.upbound.io/v1alpha1`) covering Image list and get, usage, curated, OpenAPI subresources, and ImageSearch, plus the ingest and enrichment pipeline that populates it. |
 | `Metrics` | `false` | The metrics ingest endpoint and the `metrics.hub.upbound.io` API group. Requires `hub-core.otelGateway.enabled=true`. |
 | `Registry` | `false` | The `registry.hub.upbound.io` API group, providing the `Connection` resource (with its `verify` subresource) and the `Repository` resource. |
-| `ResourceFilterExpression` | `true` | CEL-based filtering on resource-list endpoints. Not enforced in this release, see below. |
 
 ### Agent sessions require an Anthropic API key
 
@@ -65,6 +64,17 @@ the gate is on and no key is set. The chart has no dedicated value for the key;
 features](../howtos/enable-features.md#agent-sessions) for the Secret and the
 values, and [Agent sessions](../features/agent-sessions/overview.md) for what the
 feature does.
+
+### Aggregated types
+
+The `AggregatedTypes` gate serves the fleet-wide `typedefinitions` and
+`crossplanepackages` resources, along with their `distribution` subresources. It
+defaults to `true` because the [Definitions](../features/insights/definitions.md)
+and [Packages](../features/insights/packages.md) views in the Console read those
+APIs. Setting it to `false` hides both views and drops both resources from
+`hub.upbound.io/v1alpha1` discovery. The rest of the group keeps working. See
+[Enable optional features](../howtos/enable-features.md#aggregated-types) for the
+values.
 
 ### Catalog
 
@@ -87,15 +97,6 @@ in the `hub-connector` chart. See [Metrics](../features/metrics/overview.md) and
 The `Registry` gate supplies the credentials Catalog uses to pull from private
 or self-hosted registries. See [Registry](../features/registry/overview.md) and
 [Enable optional features](../howtos/enable-features.md#catalog-and-registry).
-
-### Resource filter expressions
-
-The `ResourceFilterExpression` gate is the one gate that defaults to `true`, and
-`hub-core` doesn't check it. Expression filtering is available on a default
-install, and setting the gate to `false` doesn't turn it off. What determines
-availability is the API version: `hub.upbound.io/v1beta1` and `v1alpha2` accept
-the `filter` parameter, and `v1alpha1` ignores it. See [Resource filter
-expressions](../features/resource-filtering/overview.md).
 
 ## Enabling a feature gate
 

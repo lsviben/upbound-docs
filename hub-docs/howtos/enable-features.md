@@ -40,11 +40,10 @@ Which gates need more than a boolean:
 | Gate | Stage | Also required | Feature |
 | --- | --- | --- | --- |
 | `AgentSessions` | Alpha | An Anthropic API key, or `hub-core` won't start | [Agent sessions](../features/agent-sessions/overview.md) |
-| `AggregatedTypes` | Alpha | Nothing | [Insights](../features/insights/overview.md) |
+| `AggregatedTypes` | Alpha | Nothing, and it defaults to on | [Insights](../features/insights/overview.md) |
 | `Catalog` | Alpha | Nothing for public registries | [Catalog](../features/catalog/overview.md) |
 | `Metrics` | Alpha | `otelGateway.enabled` and a backend, or `hub-core` won't start | [Metrics pipeline](metrics.md) |
 | `Registry` | Alpha | `Connection` resources for the registries you pull from | [Registry](../features/registry/overview.md) |
-| `ResourceFilterExpression` | Alpha | Nothing, and it defaults to on | [Resource filtering](../features/resource-filtering/overview.md) |
 
 ## Apply it
 
@@ -144,17 +143,10 @@ the same values file as the gateway configuration.
 ## Aggregated types {#aggregated-types}
 
 `AggregatedTypes` adds the fleet-wide `typedefinitions` and `crossplanepackages`
-resources under `hub.upbound.io/v1alpha1`. The Console's Definitions page reads
-`typedefinitions`, so that page stays empty until the gate is on. See
-[Insights](../features/insights/overview.md).
-
-## Resource filter expressions {#resource-filter-expressions}
-
-`ResourceFilterExpression` is the one gate that defaults to `true`, and
-`hub-core` doesn't check it. What determines availability is the API version:
-`hub.upbound.io/v1beta1` and `v1alpha2` accept the `filter` parameter, and
-`v1alpha1` ignores it. See [Resource
-filtering](../features/resource-filtering/overview.md).
+resources under `hub.upbound.io/v1alpha1`. It's the one gate that defaults to
+`true`, so the Console's [Definitions](../features/insights/definitions.md) and
+[Packages](../features/insights/packages.md) pages work on a default install. Set
+it to `false` to hide both.
 
 ## Troubleshooting
 

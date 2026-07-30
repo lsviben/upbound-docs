@@ -4,8 +4,10 @@ sidebar_position: 4
 description: Find, filter, and inspect packages across your fleet from the Console.
 ---
 
-Once Catalog is [enabled](../../howtos/enable-features.md#catalog-and-registry), the Console has a **Catalog**
-entry in the navigation sidebar and on the home page.
+Once Catalog is
+[enabled](../../howtos/enable-features.md#catalog-and-registry), a **Catalog**
+entry appears in the navigation menu under **Resource Exploration**, and in the
+quick access list on the home page.
 Open either one to see every Crossplane package image the hub has
 indexed, along with where each one runs and the APIs it declares.
 
