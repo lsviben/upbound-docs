@@ -7,7 +7,8 @@ description: Bind OIDC groups to Hub roles across the organization, realm, and c
 ## Tenancy boundaries
 
 Hub authorizes requests across three nested tiers. Each tier owns its own grant
-mechanism, and grants don't cascade between tiers.
+mechanism. Organization grants don't reach into realms, but realm grants do
+reach into the control planes a realm contains.
 
 **Organization**. The Hub installation as a whole. Everything served from a
 single `hub-core` is one organization. Organization-scoped state includes the set
@@ -24,25 +25,32 @@ environment.
 **Control plane**. An individual Kubernetes cluster (commonly a Crossplane
 control plane) registered into a realm. The resources *inside* a control plane
 (Crossplane Compositions, claims, providers, and any other custom resources) are
-governed by that cluster's own Kubernetes RBAC. Hub doesn't own this tier.
+governed by that cluster's own Kubernetes RBAC. Hub owns no binding resource at
+this tier, though a realm role can still grant read access across it.
 <!-- vale write-good.Passive = YES -->
 
 :::note
-Grants don't cascade between tiers. An organization administrator has no
-automatic access inside any realm, and a realm administrator has no automatic
-access inside any control plane. Bind users at every tier they need to operate
-in.
+An organization administrator has no automatic access inside any realm. Bind
+them with a `RealmRoleBinding` in every realm they need to operate in.
+
+Realm grants do reach downward. A `realm-admin` reads every resource in every
+control plane in the realm, whatever that control plane's own RBAC says. A
+`realm-editor` or `realm-viewer` reads a control plane's contents only where
+that control plane's RBAC grants it. Writing to resources inside a control
+plane always comes from the control plane's RBAC, whatever the realm role.
 :::
 
 ## Hub's role-binding resources
 
-Hub provides one binding resource per tier it owns. Hub delegates the control-plane tier to the control plane's own RBAC.
+Hub provides one binding resource per tier it owns. The control-plane tier has
+no Hub binding resource of its own: access there comes from a realm role, from
+the control plane's own RBAC, or from both.
 
 | Tier | Hub binding | Scope | Built-in roles |
 |------|-------------|-------|----------------|
 | Organization | `OrganizationRoleBinding` (ORB) | Cluster-scoped (Hub-wide) | `org-admin` |
 | Realm | `RealmRoleBinding` (RRB) | Namespaced in the realm | `realm-admin`, `realm-editor`, `realm-viewer` |
-| Control plane | None | Defers to the control plane's own RBAC | None |
+| Control plane | None | Realm roles plus the control plane's own RBAC | None |
 
 `OrganizationRoleBinding` and `RealmRoleBinding` live in the
 `authorization.hub.upbound.io/v1alpha1` API group. They accept the same shape of
@@ -165,10 +173,15 @@ kubectl --context hub apply -f prod-east-viewer-binding.yaml
 Pick the role:
 
 - **`realm-admin`**. Full control of realm-scoped resources, including the
-  ability to register, update, and remove control planes within the realm.
+  ability to register, update, and remove control planes within the realm. Also
+  reads every resource inside every control plane in the realm, whatever that
+  control plane's RBAC says.
 - **`realm-editor`**. Read-write access to realm-scoped resources. Can't modify
-  realm role bindings.
-- **`realm-viewer`**. Read-only access to realm-scoped resources.
+  realm role bindings. Reads resources inside a control plane only where that
+  control plane's RBAC grants it.
+- **`realm-viewer`**. Read-only access to realm-scoped resources. Reads
+  resources inside a control plane only where that control plane's RBAC grants
+  it.
 
 `spec.roleRef.name` must be one of those three values. Hub rejects bindings that
 reference any other name.
@@ -185,16 +198,22 @@ realm.
 :::
 
 :::note
-A `RealmRoleBinding` doesn't grant access to resources *inside* the control
-planes registered to the realm. A `realm-viewer` can see *that* a control plane
-exists. The control plane's own RBAC governs what they can see *inside*. The next section covers it.
+What a `RealmRoleBinding` grants *inside* a control plane depends on the role.
+A `realm-admin` reads every resource in every control plane in the realm. A
+`realm-editor` or `realm-viewer` can see *that* a control plane exists, but
+reads its contents only where the control plane's own RBAC grants it. The next
+section covers that side.
 :::
 
 ## Configure control-plane-level access
 
 Hub doesn't provide a binding resource for this tier. Each control plane is
-itself a Kubernetes cluster with its own RBAC. Hub defers to that cluster's
-API server when deciding what resources to surface to a user.
+itself a Kubernetes cluster with its own RBAC.
+
+This tier is what a `realm-editor` or `realm-viewer` depends on: the control
+plane's RBAC decides what Hub surfaces from inside it, and it's the only way to
+grant write access to those resources. A `realm-admin` already reads everything
+in the realm, so these steps only widen what they can change.
 
 To grant a user access to specific resources inside a control plane:
 
@@ -205,9 +224,20 @@ To grant a user access to specific resources inside a control plane:
    `ClusterRoleBinding`. The subject `name` uses the same prefixed identity Hub
    derives from the OIDC token (such as `corp:platform-admins`).
 
-Hub queries the control plane's authorization API at request time. When a user
-opens a control plane in the Hub UI, Hub shows them only what the
-control plane's RBAC permits them to read.
+Hub queries the control plane's authorization API at request time and combines
+the answer with the caller's realm role. The two sources are additive: a user
+sees a resource if either their realm role or the control plane's RBAC admits
+it. A `realm-viewer` who also holds a `ClusterRoleBinding` granting write access
+inside one control plane gets read access across the realm and write access in
+that one control plane.
+
+:::note
+A `ControlPlane` chooses which identity providers it trusts through
+`spec.identityProviders`. Hub maps a caller onto this control plane's RBAC
+subjects only for a provider in that list. Leaving the field empty trusts every
+provider, which is the default. If you set it, include the provider that issues
+the identities you bind here, or the bindings never match.
+:::
 
 Refer to your control plane's documentation for the RBAC primitives it exposes.
 For a Crossplane managed control plane, this is standard Kubernetes RBAC against
