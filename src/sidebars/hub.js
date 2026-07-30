@@ -46,6 +46,8 @@ module.exports = {
           items: ["howtos/databases/aws-rds"],
         },
         "howtos/install",
+        "howtos/connect-control-plane",
+        "howtos/connect-space",
       ],
     },
     {
@@ -57,8 +59,6 @@ module.exports = {
         "howtos/high-availability",
         "howtos/autoscaling",
         "howtos/rbac",
-        "howtos/connect-control-plane",
-        "howtos/connect-space",
         "howtos/upgrades",
       ],
     },
