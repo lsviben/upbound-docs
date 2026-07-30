@@ -35,7 +35,6 @@ module.exports = {
           link: { type: 'doc', id: 'features/agent-sessions/overview' },
           customProps: { badge: 'Preview' },
           items: [
-            'features/agent-sessions/configuration',
             'features/agent-sessions/troubleshooting-session',
           ],
         },
@@ -45,7 +44,6 @@ module.exports = {
           link: { type: 'doc', id: 'features/catalog/overview' },
           customProps: { badge: 'Preview' },
           items: [
-            'features/catalog/configuration',
             'features/catalog/console',
           ],
         },
@@ -56,13 +54,10 @@ module.exports = {
           customProps: { badge: 'Preview' },
         },
         {
-          type: 'category',
+          type: 'doc',
+          id: 'features/registry/overview',
           label: 'Registry',
-          link: { type: 'doc', id: 'features/registry/overview' },
           customProps: { badge: 'Preview' },
-          items: [
-            'features/registry/configuration',
-          ],
         },
         {
           type: 'category',
@@ -90,6 +85,7 @@ module.exports = {
           ],
         },
         'howtos/install',
+        'howtos/enable-features',
         'howtos/metrics',
       ],
     },
