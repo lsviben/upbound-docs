@@ -256,5 +256,7 @@ exceptions:
   - ORB
   - RRB
   - SIG
-  - OTEL
   - OTLP
+  - GMP
+  - AMP
+  - APS

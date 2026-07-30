@@ -241,5 +241,11 @@ flagd
 JSONLogic
 allowlist
 allowlists
-allowlisted
+matcher
+matchers
+misconfigured
+OTel
 PromQL
+SigV4
+swappable
+Mimir
