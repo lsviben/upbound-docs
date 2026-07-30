@@ -50,13 +50,10 @@ module.exports = {
           ],
         },
         {
-          type: 'category',
+          type: 'doc',
+          id: 'features/metrics/overview',
           label: 'Metrics',
-          link: { type: 'doc', id: 'features/metrics/overview' },
           customProps: { badge: 'Preview' },
-          items: [
-            'features/metrics/configuration',
-          ],
         },
         {
           type: 'category',
@@ -93,6 +90,7 @@ module.exports = {
           ],
         },
         'howtos/install',
+        'howtos/metrics',
       ],
     },
     {

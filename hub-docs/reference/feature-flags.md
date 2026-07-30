@@ -93,11 +93,12 @@ and configure Catalog](../features/catalog/configuration.md) for the full setup.
 
 ### Metrics
 
-The `Metrics` gate turns on the OTLP ingest endpoint and the query API together.
+The `Metrics` gate turns on the query API and the endpoint connectors push to.
 It also needs the components that carry the pipeline: set
 `hub-core.otelGateway.enabled=true` and a backend, or `hub-core` refuses to
-start. See [Metrics](../features/metrics/overview.md) and [Enable and configure
-Metrics](../features/metrics/configuration.md).
+start. Enabling the gate collects nothing until you also turn on the collector
+in the `hub-connector` chart. See [Metrics](../features/metrics/overview.md) and
+[Metrics pipeline](../howtos/metrics.md).
 
 ### Registry
 
