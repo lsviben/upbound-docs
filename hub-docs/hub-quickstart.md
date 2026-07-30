@@ -561,5 +561,5 @@ kind delete cluster --name hub
 [connect]: ./howtos/connect-control-plane.md
 [production]: ./howtos/production-overview.md
 [rbac]: ./howtos/rbac.md
-[catalog]: ./features/catalog/overview.md
+[catalog]: ./insights/catalog/overview.md
 [upCli]: /manuals/cli/overview

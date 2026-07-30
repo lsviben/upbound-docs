@@ -10,7 +10,7 @@ import TabItem from '@theme/TabItem';
 Metrics needs configuration on both sides of the connector: a gateway and
 a storage backend on the hub, and a collector on each control plane you want to
 collect from. This page covers both. See
-[Metrics](../features/metrics/overview.md) for what the feature does and how to
+[Metrics](../insights/metrics/overview.md) for what the feature does and how to
 query it.
 
 Hub doesn't run the metrics store. You point the gateway at a
@@ -338,7 +338,7 @@ carry per-resource or per-request labels before you add it.
 
 ## See also
 
-- [Metrics](../features/metrics/overview.md)
+- [Metrics](../insights/metrics/overview.md)
 - [Feature flags](../reference/feature-flags.md)
 - [Connect a control plane](connect-control-plane.md)
 - [Connect a space](connect-space.md)

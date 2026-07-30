@@ -160,9 +160,9 @@ The Console reads two resources in the `hub.upbound.io/v1alpha1` API group:
 
 - [Insights](overview.md)
 - [Packages](packages.md)
-- [Catalog](../catalog/overview.md)
+- [Catalog](./catalog/overview.md)
 
 **Reference**
 
-- [Feature flags](../../reference/feature-flags.md)
-- [Feature lifecycle](../../reference/feature-releases.md)
+- [Feature flags](../reference/feature-flags.md)
+- [Feature lifecycle](../reference/feature-releases.md)

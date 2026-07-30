@@ -39,11 +39,11 @@ Which gates need more than a boolean:
 
 | Gate | Stage | Also required | Feature |
 | --- | --- | --- | --- |
-| `AgentSessions` | Alpha | An Anthropic API key, or `hub-core` won't start | [Agent sessions](../features/agent-sessions/overview.md) |
-| `AggregatedTypes` | Alpha | Nothing, and it defaults to on | [Insights](../features/insights/overview.md) |
-| `Catalog` | Alpha | Nothing for public registries | [Catalog](../features/catalog/overview.md) |
+| `AgentSessions` | Alpha | An Anthropic API key, or `hub-core` won't start | [Agent sessions](../insights/agent-sessions/overview.md) |
+| `AggregatedTypes` | Alpha | Nothing, and it defaults to on | [Insights](../insights/overview.md) |
+| `Catalog` | Alpha | Nothing for public registries | [Catalog](../insights/catalog/overview.md) |
 | `Metrics` | Alpha | `otelGateway.enabled` and a backend, or `hub-core` won't start | [Metrics pipeline](metrics.md) |
-| `Registry` | Alpha | `Connection` resources for the registries you pull from | [Registry](../features/registry/overview.md) |
+| `Registry` | Alpha | `Connection` resources for the registries you pull from | [Registry](../insights/registry/overview.md) |
 
 ## Apply it
 
@@ -120,7 +120,7 @@ it move together.
 Public registries need nothing else. For private or self-hosted registries, also
 enable `Registry`, which serves the API where you declare the credentials Hub
 pulls with, then create a `Connection` per registry. See
-[Registry](../features/registry/overview.md) for credential scoping and
+[Registry](../insights/registry/overview.md) for credential scoping and
 verification.
 
 Confirm both API groups respond:
@@ -144,8 +144,8 @@ the same values file as the gateway configuration.
 
 `AggregatedTypes` adds the fleet-wide `typedefinitions` and `crossplanepackages`
 resources under `hub.upbound.io/v1alpha1`. It's the one gate that defaults to
-`true`, so the Console's [Definitions](../features/insights/definitions.md) and
-[Packages](../features/insights/packages.md) pages work on a default install. Set
+`true`, so the Console's [Definitions](../insights/definitions.md) and
+[Packages](../insights/packages.md) pages work on a default install. Set
 it to `false` to hide both.
 
 ## Troubleshooting

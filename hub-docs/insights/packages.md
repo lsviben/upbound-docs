@@ -128,14 +128,14 @@ Packages answers which control planes declare a package, and at which version.
 It reports on the package objects on your control planes, not on the contents of
 the package images.
 
-[Catalog](../catalog/overview.md) expands on the same idea by indexing the images
+[Catalog](./catalog/overview.md) expands on the same idea by indexing the images
 themselves. Catalog records the resource types each image declares, serves their
 OpenAPI schemas, and searches across indexed images and their descriptions, so
 you can inspect an API without installing the package.
 
 :::note
 Catalog is a preview feature and, unlike Packages, it's disabled by default. See
-[Enable optional features](../../howtos/enable-features.md#catalog-and-registry)
+[Enable optional features](../howtos/enable-features.md#catalog-and-registry)
 to turn it on.
 :::
 
@@ -159,9 +159,9 @@ The Console reads the `crossplanepackages` resource in the
 
 - [Insights](overview.md)
 - [Definitions](definitions.md)
-- [Catalog](../catalog/overview.md)
+- [Catalog](./catalog/overview.md)
 
 **Reference**
 
-- [Feature flags](../../reference/feature-flags.md)
-- [Feature lifecycle](../../reference/feature-releases.md)
+- [Feature flags](../reference/feature-flags.md)
+- [Feature lifecycle](../reference/feature-releases.md)
