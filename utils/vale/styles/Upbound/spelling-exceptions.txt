@@ -237,3 +237,15 @@ queryable
 Artifactory
 passwordless
 deregister
+flagd
+JSONLogic
+allowlist
+allowlists
+matcher
+matchers
+misconfigured
+OTel
+PromQL
+SigV4
+swappable
+Mimir

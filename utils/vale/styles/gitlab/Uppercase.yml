@@ -256,3 +256,7 @@ exceptions:
   - ORB
   - RRB
   - SIG
+  - OTLP
+  - GMP
+  - AMP
+  - APS

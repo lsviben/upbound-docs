@@ -25,7 +25,10 @@ those types.
 Catalog is an alpha feature. It's disabled by default, and its API may change in
 incompatible ways between releases. See the [feature
 lifecycle](../../reference/feature-releases.md) for what the alpha stage
-guarantees, and avoid relying on Catalog for production workloads.
+guarantees, and avoid relying on Catalog for production workloads. Set the
+`Catalog` gate in your Helm values to turn it on. Private registries also need
+the `Registry` gate. See [Feature
+flags](../../reference/feature-flags.md#catalog).
 :::
 
 <!-- vale Google.Headings = NO -->
@@ -62,7 +65,6 @@ To start using Catalog, see:
 **How-to guides**
 
 - [Browsing the Catalog](console.md)
-- [Enable and configure Catalog](configuration.md)
 
 **Reference**
 

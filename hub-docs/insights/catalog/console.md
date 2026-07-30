@@ -4,8 +4,10 @@ sidebar_position: 4
 description: Find, filter, and inspect packages across your fleet from the Console.
 ---
 
-Once Catalog is [enabled](configuration.md), the Console has a **Catalog**
-entry in the navigation sidebar and on the home page.
+Once Catalog is
+[enabled](../../reference/feature-flags.md#catalog), a **Catalog**
+entry appears in the navigation menu under **Resource Exploration**, and in the
+quick access list on the home page.
 Open either one to see every Crossplane package image the hub has
 indexed, along with where each one runs and the APIs it declares.
 
@@ -128,7 +130,7 @@ host, scope, authentication method, and any error information.
 
 <img src="/img/hub/catalog/connections.png" alt="Registry connection badge with hover details" style={{maxWidth: '500px', width: '100%'}} />
 
-To add or manage connections, see [External registries](external-registry.md).
+To add or manage connections, see [Registry](../registry/overview.md).
 
 ## Good to know
 
@@ -141,12 +143,11 @@ To add or manage connections, see [External registries](external-registry.md).
 - **Data refreshes every 30 seconds.** Use the Refresh button for an immediate
   update.
 - **Catalog requires a feature flag.** The Console shows the Catalog page only
-  when the Catalog feature is [enabled](configuration.md).
+  when the Catalog feature is [enabled](../../reference/feature-flags.md#catalog).
 
 ## See also
 
 - [Catalog overview](overview.md)
-- [Enable and configure Catalog](configuration.md)
-- [External registries](external-registry.md)
+- [Registry overview](../registry/overview.md)
 - [Feature flags](../../reference/feature-flags.md)
 - [Feature lifecycle](../../reference/feature-releases.md)

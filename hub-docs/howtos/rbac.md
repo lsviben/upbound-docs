@@ -136,9 +136,16 @@ access to any realm's contents. You must grant the same subject a
 ## Configure realm-level access
 
 Most Hub API resources live at the realm level: control plane registrations,
-realm-level role bindings, and other per-tenant configuration. Grant a group
-access to a realm by creating a `RealmRoleBinding` in the realm's namespace. The
-namespace name **must match** the realm name.
+realm-level role bindings, and other per-tenant configuration.
+
+Create a realm in the Console under **Settings** → **Realms**:
+
+![Creating a realm in the Console](/img/hub/rbac/realm-create-dialog.png)
+
+![The realms list in the Console](/img/hub/rbac/realms-list.png)
+
+Grant a group access to a realm by creating a `RealmRoleBinding` in the realm's
+namespace. The namespace name **must match** the realm name.
 
 Save this as `prod-east-viewer-binding.yaml`:
 

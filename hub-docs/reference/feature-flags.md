@@ -44,101 +44,60 @@ no flag client and every gated feature is forced off regardless of the
 Set a gate with `hub-core.api.featureFlags.gates.<Gate>`; drop the leading
 `hub-core.` if you install the `hub-core` subchart on its own. The gate name is
 also the name that appears in `FEATURE_GATES` and in the `hub-core` startup
-logs. Every gate in this release is alpha, and all but one default to `false`.
+logs. Every gate in this release is alpha, and most default to `false`.
 
 <!-- vale Google.WordList = NO -->
 | Gate | Default | What it enables |
 |------|---------|-----------------|
-| `AgentSessions` | `false` | The `agent.hub.upbound.io/v1alpha1` API group, adding session and message endpoints under `/apis/agent.hub.upbound.io/v1alpha1/` for Crossplane troubleshooting. Requires an Anthropic API key (see below). |
-| `AggregatedTypes` | `false` | Fleet-wide `typedefinitions` and `crossplanepackages`, and their distribution subresources, under `hub.upbound.io/v1alpha1`. |
+| `AggregatedTypes` | `true` | Fleet-wide `typedefinitions` and `crossplanepackages`, and their distribution subresources, under `hub.upbound.io/v1alpha1`. |
 | `Catalog` | `false` | The Catalog feature as a unit: the read API (`catalog.hub.upbound.io/v1alpha1`) covering Image list and get, usage, curated, OpenAPI subresources, and ImageSearch, plus the ingest and enrichment pipeline that populates it. |
 | `Metrics` | `false` | The metrics ingest endpoint and the `metrics.hub.upbound.io` API group. Requires `hub-core.otelGateway.enabled=true`. |
 | `Registry` | `false` | The `registry.hub.upbound.io` API group, providing the `Connection` resource (with its `verify` subresource) and the `Repository` resource. |
-| `ResourceFilterExpression` | `true` | CEL-based filtering on resource-list endpoints. Not enforced in this release, see below. |
 
-### Agent sessions require an Anthropic API key
+<!-- ### Agent sessions require an Anthropic API key {#agent-sessions} -->
+<!-- | `AgentSessions` | `false` | The `agent.hub.upbound.io/v1alpha1` API group, adding session and message endpoints under `/apis/agent.hub.upbound.io/v1alpha1/` for Crossplane troubleshooting. Requires an Anthropic API key (see below). | -->
 
-The agent feature calls the Anthropic API and doesn't start without a key.
-Enable the gate, then provide the key through a Kubernetes Secret and point the
-chart at it:
+<!-- The agent feature calls the Anthropic API and `hub-core` exits at startup when -->
+<!-- the gate is on and no key is set. The chart has no dedicated value for the key; -->
+<!-- `hub-core` reads `AGENT_SESSIONS_ANTHROPIC_API_KEY` from the environment, so -->
+<!-- `api.extraEnv` is how you supply it. Point `api.extraEnv` at a Secret you create -->
+<!-- in the `hub-core` namespace, then run `helm upgrade`. See [Agent -->
+<!-- sessions](../insights/agent-sessions/overview.md) for what the feature does. -->
 
-```yaml
-hub-core:
-  api:
-    featureFlags:
-      gates:
-        AgentSessions: true
-    extraEnv:
-      - name: AGENT_SESSIONS_ANTHROPIC_API_KEY
-        valueFrom:
-          secretKeyRef:
-            name: hub-agent-anthropic
-            key: ANTHROPIC_API_KEY
-```
+### Aggregated types
 
-The chart has no dedicated value for the key. `hub-core` reads it from the
-`AGENT_SESSIONS_ANTHROPIC_API_KEY` environment variable, so `extraEnv` is how
-you supply it. `hub-core` exits at startup when the gate is on and the key is
-empty.
-
-See [Agent sessions](../features/agent-sessions/overview.md) for what the
-feature does and how to verify it started.
+The `AggregatedTypes` gate serves the fleet-wide `typedefinitions` and
+`crossplanepackages` resources, along with their `distribution` subresources. It
+defaults to `true` because the [Definitions](../insights/definitions.md)
+and [Packages](../insights/packages.md) views in the Console read those
+APIs. Setting it to `false` hides both views and drops both resources from
+`hub.upbound.io/v1alpha1` discovery. The rest of the group keeps working.
 
 ### Catalog
 
 The `Catalog` gate turns the feature on as a unit: the read API and the ingest
 and enrichment pipeline that populates it move together behind the one gate. See
-[Catalog](../features/catalog/overview.md) for what the feature does and [Enable
-and configure Catalog](../features/catalog/configuration.md) for the full setup.
+[Catalog](../insights/catalog/overview.md) for what the feature does.
+
+### Metrics
+
+The `Metrics` gate turns on the query API and the endpoint connectors push to.
+It also needs the components that carry the pipeline: set
+`hub-core.otelGateway.enabled=true` and a backend, or `hub-core` refuses to
+start. Enabling the gate collects nothing until you also turn on the collector
+in the `hub-connector` chart. See [Metrics](../insights/metrics/overview.md) and
+[Metrics pipeline](../howtos/metrics.md).
 
 ### Registry
 
 The `Registry` gate supplies the credentials Catalog uses to pull from private
-or self-hosted registries. See [Registry](../features/registry/overview.md) and
-[Enable and configure Registry](../features/registry/configuration.md).
-
-### Resource filter expressions
-
-The `ResourceFilterExpression` gate is the one gate that defaults to `true`, and
-`hub-core` doesn't check it. Expression filtering is available on a default
-install, and setting the gate to `false` doesn't turn it off. What determines
-availability is the API version: `hub.upbound.io/v1beta1` and `v1alpha2` accept
-the `filter` parameter, and `v1alpha1` ignores it. See [Resource filter
-expressions](../features/resource-filtering/overview.md).
+or self-hosted registries. See [Registry](../insights/registry/overview.md).
 
 ## Enabling a feature gate
 
-Add the gates to your `values.yaml`:
-
-```yaml
-hub-core:
-  api:
-    featureFlags:
-      gates:
-        Catalog: true
-        ResourceFilterExpression: true
-```
-
-Apply it with a normal install or upgrade:
-
-```bash
-helm upgrade --install hub <chart-ref> \
-  --namespace hub \
-  --values values.yaml
-```
-
-To flip a single gate inline:
-
-```bash
-helm upgrade --install hub <chart-ref> \
-  --namespace hub \
-  --reuse-values \
-  --set hub-core.api.featureFlags.gates.ResourceFilterExpression=true
-```
-
-The upgrade rolls the `hub-core` Pods, and the feature becomes active once they
-are `Ready`. The `hub-core` startup logs list every gate it evaluates, so
-you can confirm the running binary picked up your change.
+Gates go in the same `values.yaml` you installed with, and a `helm upgrade`
+applies them. The `hub-core` startup logs report the resolved value of every
+gate, so check them to confirm which gates the running binary picked up.
 
 Disabling a beta feature works the same way in reverse. Set its gate to `false`
 to turn off a feature that defaults to on.
