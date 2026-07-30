@@ -4,6 +4,12 @@ sidebar_position: 1
 description: Ask questions about the resources across your fleet in a chat session backed by the agent API.
 ---
 
+import EnableFeature from '@site/src/components/EnableFeature';
+
+<EnableFeature gate="AgentSessions" anchor="agent-sessions">
+  It also needs an Anthropic API key, or hub-core refuses to start.
+</EnableFeature>
+
 Agent sessions add a conversational surface to Hub. The feature serves the
 `agent.hub.upbound.io/v1alpha1` API group, which exposes session and message
 endpoints under `/apis/agent.hub.upbound.io/v1alpha1/`. You ask about the
@@ -91,7 +97,7 @@ its own timeout.
 
 ## See also
 
-- [Enable and configure agent sessions](configuration.md)
+- [Enable optional features](../../howtos/enable-features.md#agent-sessions)
 - [Start a troubleshooting session](troubleshooting-session.md)
 - [Feature flags](../../reference/feature-flags.md)
 - [Feature lifecycle](../../reference/feature-releases.md)

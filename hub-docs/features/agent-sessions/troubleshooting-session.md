@@ -10,7 +10,7 @@ knowing which control plane it's on.
 
 ## Before you start
 <!-- vale write-good.Passive = NO -->
-- [Enable agent sessions](configuration.md) and confirm the API group responds.
+- [Enable agent sessions](../../howtos/enable-features.md#agent-sessions) and confirm the API group responds.
 - An account in an organization admin group. No other role is granted the
   session resources.
 <!-- vale write-good.Passive = YES -->
@@ -165,6 +165,6 @@ curl -sS -X DELETE \
 ## See also
 
 - [Agent sessions overview](overview.md)
-- [Enable and configure agent sessions](configuration.md)
+- [Enable optional features](../../howtos/enable-features.md#agent-sessions)
 - [Filtering resource lists](../resource-filtering/filtering-resources.md), which
   uses the same query surface the agent's `query_resources` tool calls.

@@ -114,6 +114,7 @@ const config = {
                 path: "hub-docs",
                 routeBasePath: "/hub",
                 sidebarPath: require.resolve("./src/sidebars/hub.js"),
+                remarkPlugins: [require("./scripts/manifest-embed-plugin")],
                 includeCurrentVersion: true,
                 lastVersion: "current",
                 versions: {

@@ -4,6 +4,12 @@ sidebar_position: 1
 description: Index and search the package images running across your fleet through Hub's Catalog API.
 ---
 
+import EnableFeature from '@site/src/components/EnableFeature';
+
+<EnableFeature gate="Catalog" anchor="catalog-and-registry">
+  Private registries also need the Registry gate.
+</EnableFeature>
+
 Catalog is an index of the package images running across your
 connected control planes and makes them queryable through a dedicated API.
 
@@ -62,7 +68,7 @@ To start using Catalog, see:
 **How-to guides**
 
 - [Browsing the Catalog](console.md)
-- [Enable and configure Catalog](configuration.md)
+- [Enable optional features](../../howtos/enable-features.md#catalog-and-registry)
 
 **Reference**
 

@@ -4,7 +4,7 @@ sidebar_position: 4
 description: Find, filter, and inspect packages across your fleet from the Console.
 ---
 
-Once Catalog is [enabled](configuration.md), the Console has a **Catalog**
+Once Catalog is [enabled](../../howtos/enable-features.md#catalog-and-registry), the Console has a **Catalog**
 entry in the navigation sidebar and on the home page.
 Open either one to see every Crossplane package image the hub has
 indexed, along with where each one runs and the APIs it declares.
@@ -141,12 +141,12 @@ To add or manage connections, see [Registry](../registry/overview.md).
 - **Data refreshes every 30 seconds.** Use the Refresh button for an immediate
   update.
 - **Catalog requires a feature flag.** The Console shows the Catalog page only
-  when the Catalog feature is [enabled](configuration.md).
+  when the Catalog feature is [enabled](../../howtos/enable-features.md#catalog-and-registry).
 
 ## See also
 
 - [Catalog overview](overview.md)
-- [Enable and configure Catalog](configuration.md)
+- [Enable optional features](../../howtos/enable-features.md#catalog-and-registry)
 - [Registry overview](../registry/overview.md)
 - [Feature flags](../../reference/feature-flags.md)
 - [Feature lifecycle](../../reference/feature-releases.md)

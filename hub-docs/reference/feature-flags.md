@@ -58,38 +58,20 @@ logs. Every gate in this release is alpha, and all but one default to `false`.
 
 ### Agent sessions require an Anthropic API key
 
-The agent feature calls the Anthropic API and doesn't start without a key.
-Enable the gate, then provide the key through a Kubernetes Secret and point the
-chart at it:
-
-```yaml
-hub-core:
-  api:
-    featureFlags:
-      gates:
-        AgentSessions: true
-    extraEnv:
-      - name: AGENT_SESSIONS_ANTHROPIC_API_KEY
-        valueFrom:
-          secretKeyRef:
-            name: hub-agent-anthropic
-            key: ANTHROPIC_API_KEY
-```
-
-The chart has no dedicated value for the key. `hub-core` reads it from the
-`AGENT_SESSIONS_ANTHROPIC_API_KEY` environment variable, so `extraEnv` is how
-you supply it. `hub-core` exits at startup when the gate is on and the key is
-empty.
-
-See [Agent sessions](../features/agent-sessions/overview.md) for what the
-feature does and how to verify it started.
+The agent feature calls the Anthropic API and `hub-core` exits at startup when
+the gate is on and no key is set. The chart has no dedicated value for the key;
+`hub-core` reads `AGENT_SESSIONS_ANTHROPIC_API_KEY` from the environment, so
+`api.extraEnv` is how you supply it. See [Enable optional
+features](../howtos/enable-features.md#agent-sessions) for the Secret and the
+values, and [Agent sessions](../features/agent-sessions/overview.md) for what the
+feature does.
 
 ### Catalog
 
 The `Catalog` gate turns the feature on as a unit: the read API and the ingest
 and enrichment pipeline that populates it move together behind the one gate. See
 [Catalog](../features/catalog/overview.md) for what the feature does and [Enable
-and configure Catalog](../features/catalog/configuration.md) for the full setup.
+optional features](../howtos/enable-features.md#catalog-and-registry) for the full setup.
 
 ### Metrics
 
@@ -104,7 +86,7 @@ in the `hub-connector` chart. See [Metrics](../features/metrics/overview.md) and
 
 The `Registry` gate supplies the credentials Catalog uses to pull from private
 or self-hosted registries. See [Registry](../features/registry/overview.md) and
-[Enable and configure Registry](../features/registry/configuration.md).
+[Enable optional features](../howtos/enable-features.md#catalog-and-registry).
 
 ### Resource filter expressions
 
@@ -117,37 +99,10 @@ expressions](../features/resource-filtering/overview.md).
 
 ## Enabling a feature gate
 
-Add the gates to your `values.yaml`:
-
-```yaml
-hub-core:
-  api:
-    featureFlags:
-      gates:
-        Catalog: true
-        ResourceFilterExpression: true
-```
-
-Apply it with a normal install or upgrade:
-
-```bash
-helm upgrade --install hub <chart-ref> \
-  --namespace hub \
-  --values values.yaml
-```
-
-To flip a single gate inline:
-
-```bash
-helm upgrade --install hub <chart-ref> \
-  --namespace hub \
-  --reuse-values \
-  --set hub-core.api.featureFlags.gates.ResourceFilterExpression=true
-```
-
-The upgrade rolls the `hub-core` Pods, and the feature becomes active once they
-are `Ready`. The `hub-core` startup logs list every gate it evaluates, so
-you can confirm the running binary picked up your change.
+Gates go in the same `values.yaml` you installed with, and a `helm upgrade`
+applies them. [Enable optional features](../howtos/enable-features.md) carries
+that procedure, the values each feature needs alongside its gate, and how to
+confirm from the startup logs which gates the running binary picked up.
 
 Disabling a beta feature works the same way in reverse. Set its gate to `false`
 to turn off a feature that defaults to on.

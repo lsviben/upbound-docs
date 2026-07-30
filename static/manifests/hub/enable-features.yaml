@@ -1,0 +1,33 @@
+hub-core:
+  api:
+    featureFlags:
+      gates:
+        # Crossplane package catalog, and the credentials it pulls with.
+        Catalog: true
+        Registry: true
+        # Crossplane troubleshooting sessions. Needs the API key below.
+        AgentSessions: true
+        # Fleet-wide typedefinitions and crossplanepackages, which the
+        # Console's Definitions page reads.
+        AggregatedTypes: true
+        # Metrics also needs a gateway and a backend. See the metrics
+        # pipeline page.
+        Metrics: true
+
+    # Agent sessions read the key from the environment; the chart has no
+    # dedicated value for it.
+    extraEnv:
+      - name: AGENT_SESSIONS_ANTHROPIC_API_KEY
+        valueFrom:
+          secretKeyRef:
+            name: hub-agent-anthropic
+            key: ANTHROPIC_API_KEY
+
+  # Required whenever the Metrics gate is on.
+  otelGateway:
+    enabled: true
+    metrics:
+      backend: prometheus
+      queryURL: http://prometheus-server.monitoring.svc
+      prometheus:
+        writeEndpoint: http://prometheus-server.monitoring.svc/api/v1/write

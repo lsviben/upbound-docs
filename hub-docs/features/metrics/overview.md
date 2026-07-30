@@ -4,6 +4,12 @@ sidebar_position: 1
 description: Collect Crossplane and resource metrics from every connected control plane and query them fleet-wide with PromQL.
 ---
 
+import EnableFeature from '@site/src/components/EnableFeature';
+
+<EnableFeature gate="Metrics" anchor="metrics">
+  It also needs an OTel gateway and a Prometheus-compatible backend.
+</EnableFeature>
+
 Metrics gives you one place to ask questions about Crossplane behavior across
 every control plane you've connected to Hub. A collector on each control
 plane scrapes Crossplane, its providers and functions, filters to a curated set

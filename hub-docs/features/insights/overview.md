@@ -4,6 +4,12 @@ sidebar_position: 1
 description: See every resource running across your connected control planes and query them through one Hub API.
 ---
 
+import EnableFeature from '@site/src/components/EnableFeature';
+
+<EnableFeature gate="AggregatedTypes" anchor="aggregated-types">
+  Only the fleet-wide type resources sit behind it; the rest of Insights is always on.
+</EnableFeature>
+
 Insights is the resource aggregation layer in Hub. Every connected control plane
 syncs its resources into `hub-core`, which serves them through a single API and
 the Console. You see and search your whole estate from one place instead of
