@@ -9,8 +9,9 @@ the necessary scaling and security configuration for production traffic.
 
 The pages in this section aren't a linear install path. They're independent
 topics you apply on top of the [self-hosted install][install].
-Work through them in any order, but treat all five as required reading before
-Hub serves production traffic.
+Work through them in any order, but treat the five hardening topics as required
+reading before Hub serves production traffic, then set up observability to watch
+the result.
 
 ## Sizing
 
@@ -57,14 +58,23 @@ The upgrades page covers how to read release notes, stage upgrades in a
 non-production install, run the upgrade, and the boundary on rollbacks. See
 [Upgrades][upgrades].
 
+## Observability
+
+Once Hub is hardened and serving traffic, watch its health. Hub emits its own
+service metrics — HTTP RED, Go runtime, and ingest/query instruments — on
+`hub-core:8085`. The observability page catalogs those metrics, installs a
+turnkey dashboards chart to view them, and shows how to export them to your own
+monitoring backend. See [Observability][observability].
+
 ## Next step
 
-Start with [Sizing][sizing]. The other four topics reference the tier it
-produces.
+Start with [Sizing][sizing]. The other four hardening topics reference the tier
+it produces.
 
 [autoscaling]: /hub/howtos/autoscaling
 [high-availability]: /hub/howtos/high-availability
 [install]: /hub/howtos/install
+[observability]: /hub/howtos/observability
 [rbac]: /hub/howtos/rbac
 [sizing]: /hub/howtos/sizing
 [upgrades]: /hub/howtos/upgrades

@@ -84,6 +84,7 @@ module.exports = {
         "howtos/autoscaling",
         "howtos/rbac",
         "howtos/upgrades",
+        "howtos/observability",
       ],
     },
     {
