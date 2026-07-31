@@ -13,9 +13,9 @@ This guide covers how to open, save, share, and manage lenses in the Hub Console
 
 On the Resources page, open the Lenses panel on the left. The panel lists every lens you can use, grouped into three sections:
 
-- My Lenses which are lenses you created
-- Shared by Team which are lenses another teammate marked as shared
-- Pre-built Lenses which are lenses that ship with Hub
+- My Lenses: Lenses created and owned by you
+- Shared by Team: Lenses owned by a teammate, accessible to you
+- Pre-built Lenses: Default Lenses shipped with the Hub
 
 Select a lens from the list to apply its saved filter, sort, and column layout. The main area updates to show that lens's name, filters, and results.
 
@@ -29,7 +29,10 @@ Use the "Search lenses" field at the top of the panel to find a lens by name.
 />
 </div>
 
-You can also filter and sort the table directly without selecting a lens. Those changes affect what you see right now, but they are not saved until you create or update a lens. Switching to another lens replaces your current view with that lens's saved settings.
+You can filter and sort the Resources table directly without selecting a lens.
+Changes settings will affect what you see right now, but they are not saved
+until you create or update a lens. Switching to another lens replaces your
+current view with that lens's saved settings.
 
 ## Save your current view as a lens
 
@@ -76,7 +79,8 @@ The link contains the current filtering criteria for your teammates to use. Copy
 Use this when you want to send someone a specific view quickly, such as in a chat message or incident thread, without making the lens visible to everyone in Hub.
 
 :::tip
-Sharing the public URL shares the filter criteria for the lens, not ownership of the lens.
+Sharing the public URL shares the filtering criteria for the lens, not ownership
+of the lens itself.
 :::
 
 ### Share a lens permanently
@@ -97,7 +101,7 @@ Shared lenses appear under "Shared by Team", where anyone can select and reuse t
 </div>
 
 :::tip
-Mark a lens publicly available when your team needs a runbook-style view they can return to.
+Mark a lens publicly available when your team needs a reliable view of resources they can return to.
 :::
 
 ## Edit or delete a lens you own
@@ -105,10 +109,6 @@ Mark a lens publicly available when your team needs a runbook-style view they ca
 Open one of your lenses under "My Lenses", adjust the view, and save your changes from the menu on the lens header. Saving replaces the lens's stored view entirely.
 
 You cannot edit or delete pre-built lenses or lenses owned by someone else. If you need a variant, adjust the view and click "Create Lens" to save it as a new lens.
-
-## Good to know
-
-A lens only narrows what you already have permission to see. It does not grant access to resources, control planes, or realms you could not view otherwise.
 
 ## See also
 

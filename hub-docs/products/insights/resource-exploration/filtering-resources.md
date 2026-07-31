@@ -192,4 +192,4 @@ evaluating it. See [Where you can use it](overview.md#where-you-can-use-it).
 ## See also
 
 - [Resource filter expressions overview](overview.md)
-- [Connect a control plane](../../howtos/connect-control-plane.md)
+- [Connect a control plane](../../../howtos/connect-control-plane.md)

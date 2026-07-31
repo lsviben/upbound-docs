@@ -62,14 +62,14 @@ logs. Every gate in this release is alpha, and most default to `false`.
 <!-- `hub-core` reads `AGENT_SESSIONS_ANTHROPIC_API_KEY` from the environment, so -->
 <!-- `api.extraEnv` is how you supply it. Point `api.extraEnv` at a Secret you create -->
 <!-- in the `hub-core` namespace, then run `helm upgrade`. See [Agent -->
-<!-- sessions](../insights/agent-sessions/overview.md) for what the feature does. -->
+<!-- sessions](../products/insights/agent-sessions/overview.md) for what the feature does. -->
 
 ### Aggregated types
 
 The `AggregatedTypes` gate serves the fleet-wide `typedefinitions` and
 `crossplanepackages` resources, along with their `distribution` subresources. It
-defaults to `true` because the [Definitions](../insights/definitions.md)
-and [Packages](../insights/packages.md) views in the Console read those
+defaults to `true` because the [Definitions](../products/insights/definitions.md)
+and [Packages](../products/insights/packages.md) views in the Console read those
 APIs. Setting it to `false` hides both views and drops both resources from
 `hub.upbound.io/v1alpha1` discovery. The rest of the group keeps working.
 
@@ -77,7 +77,7 @@ APIs. Setting it to `false` hides both views and drops both resources from
 
 The `Catalog` gate turns the feature on as a unit: the read API and the ingest
 and enrichment pipeline that populates it move together behind the one gate. See
-[Catalog](../insights/catalog/overview.md) for what the feature does.
+[Catalog](../products/insights/catalog/overview.md) for what the feature does.
 
 ### Metrics
 
@@ -85,13 +85,13 @@ The `Metrics` gate turns on the query API and the endpoint connectors push to.
 It also needs the components that carry the pipeline: set
 `hub-core.otelGateway.enabled=true` and a backend, or `hub-core` refuses to
 start. Enabling the gate collects nothing until you also turn on the collector
-in the `hub-connector` chart. See [Metrics](../insights/metrics/overview.md) and
+in the `hub-connector` chart. See [Metrics](../products/insights/metrics/overview.md) and
 [Metrics pipeline](../howtos/metrics.md).
 
 ### Registry
 
 The `Registry` gate supplies the credentials Catalog uses to pull from private
-or self-hosted registries. See [Registry](../insights/registry/overview.md).
+or self-hosted registries. See [Registry](../products/insights/registry/overview.md).
 
 ## Enabling a feature gate
 

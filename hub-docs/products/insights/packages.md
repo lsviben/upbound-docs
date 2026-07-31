@@ -11,7 +11,7 @@ row covers every control plane that declares it and every version they declare.
 :::note
 The `AggregatedTypes` gate serves this view and
 [Definitions](definitions.md). It defaults to on. See [Feature
-flags](../reference/feature-flags.md#aggregated-types) to turn it off.
+flags](../../reference/feature-flags.md#aggregated-types) to turn it off.
 :::
 
 Hub identifies a row by package type and repository, such as the `provider`
@@ -135,7 +135,7 @@ you can inspect an API without installing the package.
 
 :::note
 Catalog is a preview feature and, unlike Packages, it's disabled by default. See
-[Feature flags](../reference/feature-flags.md#catalog) to turn it on.
+[Feature flags](../../reference/feature-flags.md#catalog) to turn it on.
 :::
 
 Enabling Catalog doesn't replace Packages. Catalog appears as an extra
@@ -162,5 +162,5 @@ The Console reads the `crossplanepackages` resource in the
 
 **Reference**
 
-- [Feature flags](../reference/feature-flags.md)
-- [Feature lifecycle](../reference/feature-releases.md)
+- [Feature flags](../../reference/feature-flags.md)
+- [Feature lifecycle](../../reference/feature-releases.md)

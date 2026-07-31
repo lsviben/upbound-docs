@@ -37,8 +37,8 @@ following criteria works with Hub:
 :::note
 If your provider emits groups under a non-standard claim name, see
 [Provider-specific configuration](#provider-specific-configuration) for the
-Hub-side deviation. (Entra ID emits `groups` only when explicitly configured;
-Google Workspace doesn't emit groups in the ID token at all.)
+Hub-side deviation. Entra ID emits `groups` only when explicitly configured, and
+Google Workspace doesn't emit groups in the ID token at all.
 :::
 
 ## Choosing how to configure the provider
@@ -93,47 +93,73 @@ Done in your OIDC provider's console or API, before touching Hub.
   you control. Note the claim name.
 - Register Hub as a client application. Record the client ID and client secret.
 - Configure the redirect URI as `<externalURL>/oidc/callback`. You must know the
-  public hostname of `hub-api` before this step.
+  public hostname of `hub-core` before this step.
 - Look up the well-known discovery URL (the issuer URL) for the provider. This
   is the value you give to Hub.
 
 ### 2. Hub-side
 
-Done in your Helm values, after you configure the provider.
+Record the values below once your provider is configured. You don't write any
+`values.yaml` on this page. [The install guide][install] owns that file, and you
+paste these values into it in step 4.
 <!-- vale write-good.Passive = NO -->
 <!-- vale write-good.Weasel = NO -->
-- Set `hub-core.api.externalURL` to the public base URL of `hub-core`. The
-  redirect URI you registered in stage 1 must match this exactly.
-- Set the OIDC values under `hub-core.api.sampleEmailBasedOIDCConfig`:
+- `hub-core.api.externalURL`. The public base URL of `hub-core`. The redirect URI
+  you registered in stage 1 must match this exactly.
+- The OIDC values under `hub-core.api.sampleEmailBasedOIDCConfig`:
   - `providerName`. A short identifier used as a prefix on usernames and group
     names (such as `entra`, `google`, `cognito`). Defaults to `oidc`.
   - `issuerURL`. The issuer URL from stage 1.
   - `clientID`. The client ID from stage 1.
-  - `clientSecret`. The client secret from stage 1. Provided through Helm
-    values, this value is written into the bootstrap Secret. For production,
-    supply the secret through your secret management workflow rather than
-    committing it to values.
+  - `clientSecret`. The client secret from stage 1. Don't commit this to
+    `values.yaml`. The install guide passes it on the `helm install` command
+    line, and for production you supply it through your secret management
+    workflow.
   - `allowedDomain`. Optional. If set, Hub rejects logins whose email doesn't
     end in `@<allowedDomain>`.
-  - `groupsClaim`. The claim name from stage 1 that carries group membership.
-    Defaults to `groups`. Set it to `""` to skip group mapping entirely, which
-    leaves only per-user role bindings working.
-- Run `helm install` or `helm upgrade`. Hub generates an `IdentityProvider`
-  resource named after `providerName` and applies it on startup.
-- Create an `OrganizationRoleBinding` that binds your administrator group
-  (prefixed with `<providerName>:`) to the `org-admin` role. Without this
-  binding, the first user to log in has no permissions.
+  - `groupsClaim`. The token claim carrying group membership. Defaults to
+    `groups`. Set it to your provider's claim name if it differs (Cognito uses
+    `cognito:groups`), or to `""` to omit the mapping, which leaves only
+    per-user email bindings working.
+- The first administrators, for `hub-core.bootstrap.admins`. Each entry is a
+  `kind` and `name` pair, where `kind` is `Group` or `User` and `name` carries
+  the `<providerName>:` prefix. Hub renders both an `OrganizationRoleBinding`
+  bound to `org-admin` and a `RealmRoleBinding` bound to `realm-admin` on the
+  `default` realm from this one list:
+
+  ```yaml
+  hub-core:
+    bootstrap:
+      admins:
+        - kind: Group
+          name: "oidc:platform-admins"
+        - kind: User
+          name: "oidc:alice@example.com"
+  ```
+
+  Group names come from the `groupsClaim` value, prefixed with
+  `<providerName>:`. User names are the user's email, prefixed the same way.
+  With Entra ID emitting group object IDs, the subject is
+  `<providerName>:<group-object-id>`.
+
+:::warning
+Without at least one entry in `hub-core.bootstrap.admins`, the first user to log
+in has no permissions and no way to grant themselves any. Set it before the
+first install.
+:::
 <!-- vale write-good.Weasel  = YES -->
 <!-- vale write-good.Passive = YES -->
 
 ### 3. End-user login
 
-Done from the browser, after you install the chart.
+Done from the browser, after you install the chart. [The install
+guide][install] covers this step in place, once the values above are in
+`values.yaml`.
 
 - Navigate to the Hub UI at the URL you configured.
 - Sign in. The provider authenticates you and redirects back to Hub.
-- Confirm Hub recognizes your identity and group memberships. A user with the
-  bound administrator group sees the full UI. A user without any bound group
+- Confirm Hub recognizes your identity and group memberships. A user in
+  `hub-core.bootstrap.admins` sees the full UI. A user without any bound group
   sees an empty workspace.
 
 ## Provider-specific configuration
@@ -145,8 +171,9 @@ the redirect URI from [Setup Order](#setup-order).
 
 Once the application exists, the only Hub-side settings that differ between
 providers are the `issuerURL` and how group memberships reach the ID token.
-Everything else in the `hub-core.api.sampleEmailBasedOIDCConfig` block from
-stage 2 stays the same. The deviations for each provider are below.
+Every other value from stage 2 stays the same. The deviations for each provider
+are below. The YAML fragments in this section show only the keys that deviate.
+Merge them into the OIDC block in step 4 of [the install guide][install].
 
 ### Standards-compliant providers
 
@@ -157,7 +184,7 @@ Dex, and similar) need no deviation.
   `.well-known/openid-configuration`.
 - Groups: emitted by default under the claim name `groups`. No override needed.
 
-The `sampleEmailBasedOIDCConfig` block works as documented in stage 2.
+The values you recorded in stage 2 need no changes.
 
 <!-- vale Google.Headings = NO -->
 ### Amazon Cognito
@@ -175,6 +202,7 @@ for user pool and app client setup.
   hub-core:
     api:
       sampleEmailBasedOIDCConfig:
+        providerName: cognito
         groupsClaim: "cognito:groups"
   ```
 
@@ -208,10 +236,12 @@ OAuth client setup.
 - `issuerURL`: `https://accounts.google.com` (fixed).
 - Groups: group membership from Workspace never appears in the ID token.
   Choose one of:
-  - **Bind to users.** Skip groups and bind roles to individual users by email
-    (`<providerName>:alice@example.com`).
+  - **Bind to users.** Set `groupsClaim: ""` and list each administrator as a
+    `User` in `hub-core.bootstrap.admins`, using their email with the
+    `<providerName>:` prefix (`google:alice@example.com`).
   - **Custom claim.** Inject a groups claim upstream (Cloud Identity custom
-    attribute or an identity broker), then point `groupsClaim` at it.
+    attribute or an identity broker), then point `groupsClaim` at that claim
+    name.
 
 ## Replacing the browser-login provider
 
@@ -261,6 +291,21 @@ value. Role bindings survive by name, so recreating the provider with the same
 anything you depend on for administrator access in `bootstrap.files`, where the
 five-minute reconcile repairs it.
 
+## Values to record
+
+Carry these into step 4 of [the install guide][install]:
+
+| Value | Where it came from |
+| --- | --- |
+| `externalURL` | The public base URL of `hub-core` |
+| `providerName` | Your choice of prefix, defaulting to `oidc` |
+| `issuerURL` | Stage 1, adjusted per your provider above |
+| `clientID` | Stage 1 |
+| Client secret | Stage 1. Passed on the command line, not committed |
+| `allowedDomain` | Optional email-domain restriction |
+| `groupsClaim` | Only if your provider deviates from `groups` |
+| Admin groups or users | Stage 2, prefixed with `<providerName>:` |
+
 ## Next step
 
 With your provider configured, set up the database Hub stores its state in:
@@ -268,8 +313,7 @@ With your provider configured, set up the database Hub stores its state in:
 - [Databases][overview]. Postgres requirements and per-provider
   provisioning.
 
-Once your database is ready, [install Hub][install] to apply these values
-and bind an administrator group to the `org-admin` role.
+Once your database is ready, [install Hub][install].
 
 [amazon-cognito-developer-guide]: https://docs.aws.amazon.com/cognito/latest/developerguide/
 [install]: /hub/howtos/install

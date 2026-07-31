@@ -268,7 +268,7 @@ things:
 - [Connect a control plane][connectCtp]
 - [Configure RBAC][rbac]
 
-[connectCtp]: ../howtos/connect-control-plane.md
-[connectSpace]: ../howtos/connect-space.md
+[connectCtp]: ../../../howtos/connect-control-plane.md
+[connectSpace]: ../../../howtos/connect-space.md
 [insights]: ./overview.md
-[rbac]: ../howtos/rbac.md
+[rbac]: ../../../howtos/rbac.md

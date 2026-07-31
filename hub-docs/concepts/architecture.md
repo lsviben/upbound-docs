@@ -1,35 +1,36 @@
 ---
 title: Architecture
 sidebar_position: 1
-description: How a self-hosted Hub installation fits together and what you provide.
+description: How the pieces of Hub fit together.
 ---
 
 ## Architecture
 
-A self-hosted hub is a single cluster running the hub control plane components
-and one or more observed Kubernetes clusters running the `hub-connector`. The
-connector pushes the resource state of your clusters to the `hub-core`. You can
-configure ingress to allow users to access the `hub-core` or the `hub-webui`. CLI
-tools and the hub connector authenticate against the `hub-core` with an
-OIDC-style token exchange.
-
+Hub refers generally to a set of Upbound products, spread throughout services
+running on single cluster, with one or more Kubernetes clusters sending data
+back through an instance of `hub-connector`. The microservices within Hub are
+stateless applications storing data in external databases The `hub-core`
+provides the central authority for authentication, ingest and APIs. The
+`hub-webui` is an optional
+web interface for interacting with the Hub.
 
 ```mermaid
 flowchart TB
   subgraph hub["Hub installation cluster"]
     ing["Ingress / Gateway API<br/>(your TLS cert)"]
     webui["hub-webui"]
-    api["hub-core<br/>:8080 API<br/>:8444 token exchange"]
-    pg["PostgreSQL (external)"]
+    api["hub-core"]
     ing --> webui
     webui <--> api
-    api --> pg
-  ing <--> api
+    ing <--> api
   end
 
   browser["Browser / CLI clients"]
-  oidc["OIDC provider (external)"]
   ing -->|HTTPS| browser
+
+  oidc["OIDC provider (external)"]
+  pg["PostgreSQL (external)"]
+  api --> pg
   api -->|OIDC discovery| oidc
 
   subgraph obsA["Observed cluster A"]
@@ -44,31 +45,22 @@ flowchart TB
     connB --> resB
   end
 
-  connA -->|HTTPS| api
-  connB -->|HTTPS| api
-  connA -->|token exchange| oidc
-  connB -->|token exchange| oidc
+  connA -->|HTTPS| ing
+  connB -->|HTTPS| ing
 ```
 
 ## What you provide
 
-- **A PostgreSQL database.** `hub-core` requires its own database. A managed
-  offering (RDS, Cloud SQL, Azure Database for PostgreSQL) or a self-managed
-  instance both work. See [the databases overview][overview] for
-  the version, extensions, and authentication modes Hub supports.
-- **An OIDC provider.** Any OIDC-compliant provider with a discovery endpoint,
+- **A PostgreSQL database** The Hub requires its own database. Upbound
+  officially supports only managed PostgreSQL offerings (RDS, Cloud SQL, Azure
+  Database for PostgreSQL). See [the databases overview][overview] for the
+  version, extensions, and authentication modes Hub supports.
+- **An OIDC provider** Any OIDC-compliant provider with a discovery endpoint,
   email claim, and configurable group claim works. See [the OIDC
   overview][oidc-configuration] for the contract and the per-provider guides.
-- **Ingress with a real TLS certificate.** Provide a Gateway API setup or an
-  Ingress controller, plus a CA-signed certificate.
-- **DNS.** Pick the hostnames for `hub-core` and `hub-webui`
-  (typically `api.<your-domain>` and `ui.<your-domain>`) and create the DNS
-  records before install. Hub computes the OIDC redirect URI from them, and it must
-  match what the provider has registered.
-- **Kubernetes RBAC for connectors.** Each observed cluster needs the
-  `hub-connector` ServiceAccount to be able to read the Crossplane resources you
-  want Hub to see. The connector chart creates the binding from its own values.
-  You confirm the cluster role matches your access policy.
+- **Ingress** Provide a Gateway API setup or an
+  Ingress controller, plus a CA-signed certificate attached to hostnames that
+  will expose your API and (optionally) the UI.
 
 The full pre-flight checklist (versions, sizing, network paths) lives in
 [prerequisites][prerequisites]. Read it before you move to the install page.
@@ -86,25 +78,24 @@ or issue resolution. Any such deployment is at your own risk.
 
 ## What the chart provides
 
-The `hub` umbrella chart at `<chart-ref>` installs three subcharts - `hub-core`,
+The `hub` umbrella chart installs three subcharts - `hub-core`,
 `hub-webui` and `hub-connector`. `hub-core` is the only chart that's required
 for an operational API that can accept resources and serve responses.
 `hub-webui` is optional (but recommended) to interact with the system without
 using the API directly.
 
-- **`hub-core` Deployment.** The API server, plus a Kubernetes Job that runs
-  schema migrations on install and upgrade.
-- **`hub-webui` Deployment.** The browser UI. Optional, disable it if you only
-  want the API.
-- **`hub-connector` Deployment.** You install it once per observed control
-  plane, typically as a separate Helm release in each observed cluster. The
-  architecture reference describes the
-  connector's data and authentication flow
+- **`hub-core` Deployment.** The entrypoint API server for ingesting resources
+  and accessing the Upbound Platform products.
+- **`hub-webui` Deployment.** The browser UI for all of the Upbound Platform
+  products. Optional, disable it if you only want the API.
+- **`hub-connector` Deployment.** The component responsible for syncing state
+  between connected Kubernetes control planes and `hub-core`. The architecture
+  reference describes the connector's data and authentication flow.
 - **Bootstrap configuration.** A Kubernetes Secret rendered from
   `hub-core.bootstrap.files`. Use it to register your initial Hub objects at
   install time. That covers the first `IdentityProvider`, the first
   `ControlPlane`, plus an `OrganizationRoleBinding` linking your OIDC admin
-  group to Hub's admin role. The first login then opens at a usable cluster.
+  group to Hub's admin role.
 
 ## Next step
 

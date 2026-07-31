@@ -44,8 +44,8 @@ Before running `helm upgrade`, work through the following:
    include a breaking values change you need to honor.
 3. **Diff your values.** If you keep your `values.yaml` in source control,
    compare it against the new chart's defaults. Run `helm show values
-   <chart-ref> --version <new-version>` to see the new defaults and check for
-   renamed or removed keys.
+   oci://xpkg.upbound.io/upbound/hub --version <new-version>` to see the new
+   defaults and check for renamed or removed keys.
 4. **Stage the upgrade.** Run the upgrade against a non-production installation
    first, ideally one that mirrors your production values and points at a copy
    of your production schema. Confirm the migration completes, the new Pods come
@@ -69,16 +69,10 @@ the Hub database before upgrading.
 
 The upgrade is a standard `helm upgrade` against the `hub` chart.
 
-1. Fetch the chart at the target version:
+1. Run the upgrade with your existing values file:
 
     ```bash
-    helm pull <chart-ref> --version <new-version>
-    ```
-
-2. Run the upgrade with your existing values file:
-
-    ```bash
-    helm upgrade hub <chart-ref> \
+    helm upgrade hub oci://xpkg.upbound.io/upbound/hub \
       --version <new-version> \
       --namespace hub \
       --values values.yaml
@@ -88,7 +82,7 @@ The upgrade is a standard `helm upgrade` against the `hub` chart.
     `values.yaml` with the path to the values file you used for the original
     install.
 
-3. Watch the rollout:
+2. Watch the rollout:
 
     ```bash
     kubectl -n hub rollout status deployment/hub-core
@@ -104,25 +98,17 @@ The upgrade is a standard `helm upgrade` against the `hub` chart.
     kubectl -n hub logs -l app.kubernetes.io/component=api-migrate -c sql-migrate --follow
     ```
 
-4. Roll the connectors. Each `hub-connector` install is a separate Helm release
+3. Roll the connectors. Each `hub-connector` install is a separate Helm release
    in its host control plane. Upgrade each one to the same chart version using
    the same `helm upgrade` shape with its own values file.
 
-5. Verify:
+4. Verify:
 
     - The migration Job completed successfully and the `hub-core` Pods are
       `Ready`.
     - The Hub UI loads and you can authenticate.
     - Each `hub-connector` reconnects and continues reporting ControlPlane
       state.
-
-:::note
-If the migration Job fails, the `pre-upgrade` hook fails and `helm upgrade`
-aborts before any new Pods roll out. Your existing release keeps running
-unchanged. The failed Job is retained until the next upgrade attempt. You can
-inspect its logs, fix the underlying problem (such as a missing PostgreSQL
-privilege), and re-run the upgrade.
-:::
 
 ## Roll back
 

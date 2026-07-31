@@ -1,11 +1,11 @@
 ---
 title: Prerequisites
 sidebar_position: 1
-description: Cluster, ingress, Domain Name System, Postgres, and OIDC requirements for a self-hosted Hub.
+description: All requirements for installing and maintaining self-hosted Hub.
 ---
 
-Before you start the installation process, this page helps you understand
-the requirements necessary to best support the hub. 
+Before you start the process for installing a self-hosted version of the Hub,
+this page helps you understand each of the necessary requirements.
 
 <!-- vale write-good.Passive = NO -->
 This pre-flight checklist is required before you move to the [installation]
@@ -18,7 +18,7 @@ First, you need a Kubernetes cluster.
 
 The cluster must:
 
-- Run on version 1.29 or later. The chart relies on stable Gateway API
+- Run Kubernetes 1.29 or later. The chart relies on stable Gateway API
   CRDs and on Pod security primitives available in 1.29+. Earlier versions are
   not tested and may render templates that the API server rejects.
 - Allow you `cluster-admin` access. The install creates a Namespace, ServiceAccounts,
@@ -35,16 +35,14 @@ for ingress, TLS, or Postgres. The chart installs into a single Namespace.
 ## Ingress and TLS
 <!-- vale Microsoft.HeadingAcronyms = YES -->
 
-
-Hub serves the `hub-core` and `hub-webui` services over HTTPS on
-operator-provided hostnames. You can use any conformant controller for
-outside traffic to reach them.
+Hub serves the API and UI services over HTTPS on operator-provided hostnames.
+You can use any conformant controller for outside traffic to reach them.
 
 <!-- vale Microsoft.Adverbs = NO -->
 The chart can render Kubernetes Gateway API resources for you when you set
 `global.gateway.enabled=true`. In that mode you point it at a pre-existing
 `Gateway` (recommended) or have the chart create one. The chart never installs
-the Gateway controller itself and you must install that separately.
+the Gateway controller itself, so you must install that separately.
 <!-- vale Microsoft.Adverbs = YES -->
 
 You need:
@@ -70,21 +68,21 @@ You need:
 <!-- vale Google.WordList = YES -->
 
 For Gateway API documentation, see the upstream [Gateway API
-project][gateway-api-project]. For cert-manager, see the
-[cert-manager docs][cert-manager-docs].
+project][gateway-api-project].
 <!-- vale Google.Headings = NO -->
 ## DNS
 <!-- vale Google.Headings = YES -->
 <!-- vale write-good.Passive = NO -->
-Hub is designed to span multiple subdomains. The defaults the chart composes are
-`<subdomain>.<your-domain>` for each. You control the apex domain, and the
-subdomain prefixes are configurable.
+Hub is designed to span multiple subdomains, but can optionally be served from a
+single domain. The defaults the chart composes are `<subdomain>.<your-domain>`
+for each. You control the apex domain, and the subdomain prefixes are
+configurable.
 <!-- vale write-good.Passive = YES -->
 
-| Hostname (default) | Serves |
+| Default Hostname | Serves |
 |--------------------|--------|
-| `api.<your-domain>` | `hub-core` HTTP API, including the OIDC callback at `/oidc/callback`. |
-| `ui.<your-domain>` | `hub-webui` browser UI. |
+| `api.<your-domain>` | `hub-core` HTTP API |
+| `ui.<your-domain>` | `hub-webui` browser UI |
 
 Substitute `<your-domain>` with the apex domain you control (such as
 `hub.example.com`, giving you `api.hub.example.com` and `ui.hub.example.com`).
@@ -110,8 +108,8 @@ reachable from end-user browsers exactly as configured.
 <!-- vale Google.Headings = YES -->
 
 Hub stores all resource state in PostgreSQL. Provision the database before
-install. The chart consumes a connection but doesn't deploy Postgres in the
-self-hosted path.
+install. The chart only consumes a connection for an existing PostgreSQL
+instance, and will not deploy PostgreSQL.
 
 You need a PostgreSQL 18 (or later) instance reachable from the cluster, with a
 dedicated database and a role Hub can use. [The databases

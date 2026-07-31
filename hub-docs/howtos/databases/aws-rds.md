@@ -5,13 +5,13 @@ description: Provision Amazon RDS for PostgreSQL and connect Hub with IAM auth.
 ---
 
 Provision Amazon RDS for PostgreSQL, grant Hub a database role that
-authenticates with AWS IAM, then point the chart at the resulting endpoint.
+authenticates with AWS IAM, then record the resulting endpoint and region for
+the install.
 
-IAM authentication is the recommended path for self-hosted Hub on AWS. The
-`hub-core` Pod mints a short-lived RDS auth token per database connection from
-credentials supplied by IAM Roles for Service Accounts (IRSA) or EKS Pod
-Identity. Your cluster doesn't store a static database password.
-
+IAM authentication is the recommended path for self-hosted Hub on AWS. Rather
+than storing a static database password in your cluster, the `hub-core` Pods
+exchange a short-lived RDS auth token per database connection, using credentials
+from IAM Roles for Service Accounts (IRSA) or EKS Pod Identity.
 
 If you can't use IAM in your environment, review the [password-auth
 fallback](#password-authentication-fallback) instructions.
@@ -186,9 +186,9 @@ With Pod Identity the ServiceAccount needs no annotations. EKS keys the
 association by namespace and ServiceAccount name, so leave the
 `eks.amazonaws.com/role-arn` annotation out of your Helm values.
 
-## Configure hub
+## Values to record
 
-The IAM-auth Helm values omit any password Secret. `hub-core` reads the auth mode
+The IAM-auth values omit any password Secret. `hub-core` reads the auth mode
 and cloud from environment variables emitted by the chart. It then builds an RDS
 auth token from the Pod's IAM credentials. It uses that token as the PostgreSQL
 password on every new pool connection. TLS is required: the chart forces
@@ -196,7 +196,17 @@ password on every new pool connection. TLS is required: the chart forces
 `postgresql.sslmode` unset.
 <!-- vale write-good.Passive = YES -->
 
-Save this as `values.yaml`, filling in the placeholders:
+Record these values and enter them in the **AWS IAM authentication** tab in step
+4 of [the install guide][install]:
+
+| Value | Where it came from |
+| --- | --- |
+| RDS endpoint hostname | The provisioned instance |
+| AWS region | The provisioned instance |
+| Database name and user | `hub` and `hub`, from the SQL above |
+| IAM role ARN | The role you attached the policy to. IRSA only |
+
+The completed block should look like this:
 
 ```yaml
 hub-core:
@@ -221,26 +231,14 @@ hub-core:
         region: <region>
 ```
 
-Install or upgrade Hub with the rest of your self-hosted values composed in:
-
-```bash
-helm upgrade --install hub <chart-ref> \
-  --namespace hub --create-namespace \
-  -f values.yaml
-```
-
-If you reached this page from [the self-hosted install
-guide][install], merge the snippet above into the `values.yaml` you're
-already building. Don't run a separate install.
-
 :::note
 The chart ignores its `postgresql.connectionString` value when `auth.mode=iam`.
 Use the discrete `host`, `port`, `database`, and `user` fields.
 :::
 
-## Verify
+## Troubleshoot IAM auth
 
-Watch the `hub-core` Pods roll out:
+Once you've installed Hub, watch the `hub-core` Pods roll out:
 
 ```bash
 kubectl -n hub rollout status deployment/hub-core
@@ -273,33 +271,6 @@ outside AWS or on a Kubernetes cluster without workload identity. Password mode
 stores a long-lived credential in a Secret. Rotate it through whatever
 secret-management tool your organization already uses.
 
-Create the Secret in the Hub namespace:
-
-```bash
-kubectl create namespace hub
-kubectl -n hub create secret generic hub-postgres \
-  --from-literal=password='<your-password>'
-```
-
-Set these values instead of the IAM block:
-
-```yaml
-hub-core:
-  postgresql:
-    host: <rds-endpoint>
-    port: 5432
-    database: hub
-    user: hub
-    sslmode: require
-
-    auth:
-      mode: password
-      password:
-        existingSecretRef:
-          name: hub-postgres
-          key: password
-```
-
 Create the database role with a password rather than the `rds_iam`
 grant:
 
@@ -307,6 +278,11 @@ grant:
 CREATE USER hub WITH PASSWORD '<your-password>';
 GRANT ALL PRIVILEGES ON DATABASE hub TO hub;
 ```
+
+Then use the **Password authentication** tab in step 4 of [the install
+guide][install] instead of the IAM tab, with the RDS endpoint as the host. Step
+2 of that guide creates the Secret holding the password you set above. Skip the
+IAM role, policy, and ServiceAccount setup on this page entirely.
 
 Everything else (TLS, security groups, schema bootstrap) works the same as the
 IAM path.

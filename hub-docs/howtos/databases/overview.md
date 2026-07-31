@@ -4,15 +4,21 @@ sidebar_position: 1
 description: PostgreSQL Requirements and authentication modes for Hub.
 ---
 
-The hub requires an externally managed PostgreSQL instance that you provision,
-create `hub-core` roles for, and give connection details through Helm values.
+Hub requires an externally managed PostgreSQL instance. You provision the
+instance with a database and role for Hub, then record the connection details.
+
+You don't write any `values.yaml` on this page. [The install
+guide][install] owns that file. The YAML on this page shows the shape of the
+Postgres block so you know which values to record, and you paste the completed
+block into `values.yaml` in step 4 of the install.
 
 <!-- vale Google.Headings = NO -->
 ## PostgreSQL requirements
 <!-- vale Google.Headings = YES -->
 
-`hub-core` is a PostgreSQL client that holds long-lived connections and runs
-schema migrations on startup. 
+Pods in the `hub-core` will initially connect to the PostgreSQL instance to run
+schema migrations, then will maintain long-lived connections to the database to
+serve APIs.
 
 Your database must have:
 
@@ -32,15 +38,14 @@ Your database must have:
 
   `hstore` comes with PostgreSQL's `contrib` modules and is available on every
   mainstream managed Postgres service.
-- **A dedicated database and role**: provision a database for Hub (the default
-  name is `postgres`, but any name works) and a role with full privileges on it.
-  Hub doesn't share schemas with other applications.
-- **TLS**: required for any production deployment. IAM authentication (see
-  below) forces TLS regardless of the `sslmode` Helm value.
+- **A dedicated database and role**: provision a database for Hub and a role
+  with full privileges on it. Hub doesn't share schemas with other applications.
+- **TLS**: highly recommended for any production deployment. IAM authentication
+  (see below) forces TLS regardless of the `sslmode` Helm value.
 - **Network reachability**: the database must be reachable from the namespace
-  where `hub-core` runs. For cloud-managed databases, this usually means the
-  cluster's nodes (or the workload's egress NAT) sit in a network that the
-  database's security group or firewall allows.
+  where the Hub pods run within the Kubernetes cluster. For cloud-managed
+  databases, this usually means the cluster's nodes (or the workload's egress
+  NAT) sit in a network that the database's security group or firewall allows.
 
 :::note
 Hub holds a small connection pool per `hub-core` Pod. Plan for `replicas x
@@ -90,9 +95,12 @@ You can supply the password two ways:
         mode: password
         password:
           existingSecretRef:
-            name: hub-postgres-credentials
+            name: hub-core-postgres
             key: password
   ```
+
+  The install guide creates this Secret as `hub-core-postgres` in step 2. Any
+  Secret name works as long as it matches what you set here.
 
 - **Inline value (not recommended).** Pass the password directly via
   `hub-core.postgresql.auth.password.value`. The chart writes the value into the rendered
@@ -157,6 +165,20 @@ aren't accepted today.
 
 If you self-manage Postgres, treat it the same way. Provision the role and
 password yourself, then point Hub at the host with password mode.
+
+## Values to record
+
+Whichever provider and authentication mode you pick, carry these into step 4 of
+[the install guide][install]:
+
+| Value | Notes |
+| --- | --- |
+| Authentication mode | `password` or `iam`. Picks which tab you use in step 4 |
+| Host and port | The instance endpoint |
+| Database name and user | The dedicated database and role you provisioned |
+| `sslmode` | `require` or stricter. Forced to `require` in IAM mode |
+| Password Secret name and key | Password mode only |
+| AWS region and role ARN | IAM mode only. See [AWS RDS][aws-rds] |
 
 ## Next step
 

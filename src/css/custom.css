@@ -365,8 +365,8 @@ article a:not(.card):not(.menu__link):not(.navbar__item):not(.table-of-contents_
 }
 
 .menu__list .menu__list {
-    margin-left: 1rem !important;
-    padding-left: 1rem;
+    margin-left: .5rem !important;
+    padding-left: .5rem;
     border-left: 2px solid var(--upbound-border-color);
 }
 
