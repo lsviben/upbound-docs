@@ -50,21 +50,27 @@ those groups to organization-level and ControlPlane-level roles. See
 
 ## Upgrades
 
-Hub bundles `hub-core`, `hub-connector`, and `hub-webui` in a single chart on one
-release train, and schema migrations run automatically as part of `helm
-upgrade`. That means upgrades are quick to perform and carry real risk if you get them wrong.
-Migrations are forward-only, so a chart rollback doesn't undo a schema change.
-The upgrades page covers how to read release notes, stage upgrades in a
-non-production install, run the upgrade, and the boundary on rollbacks. See
-[Upgrades][upgrades].
+Hub bundles `hub-core`, `hub-connector`, and `hub-webui` in a single chart on
+one release train, and schema migrations run automatically as part of `helm
+upgrade`.That means upgrades are quick to perform and carry real risk if you get
+them wrong. Migrations are forward-only, so a chart rollback doesn't undo a
+schema change. 
+
+The upgrades page covers how to read release notes, stage
+upgrades in a non-production install, run the upgrade, and the boundary on
+rollbacks. See [Upgrades][upgrades].
 
 ## Observability
 
-Once Hub is hardened and serving traffic, watch its health. Hub emits its own
-service metrics — HTTP RED, Go runtime, and ingest/query instruments — on
-`hub-core:8085`. The observability page catalogs those metrics, installs a
-turnkey dashboards chart to view them, and shows how to export them to your own
-monitoring backend. See [Observability][observability].
+<!-- vale write-good.Passive = NO -->
+<!-- vale gitlab.Uppercase = NO -->
+Once you've hardened hub and it serves traffic, watch its health. On
+`hub-core:8085`, hub emits framework metrics (HTTP RED and Go runtime) alongside
+its own ingest and query instruments. The observability page catalogs those
+metrics. It also covers a turnkey dashboards chart for viewing them and how to
+export them to your own monitoring backend. See [Observability][observability].
+<!-- vale gitlab.Uppercase = YES -->
+<!-- vale write-good.Passive = YES -->
 
 ## Next step
 
